@@ -1,0 +1,20 @@
+# Dependencias
+node_modules/
+
+# Archivos de entorno y credenciales (evita subir el .env real manteniendo solo .env.example)
+.env
+.env.local
+.env.*.local
+
+# Logs y depuración de Node.js y npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs
+*.log
+
+# Editor y configuraciones del sistema operativo
+.DS_Store
+Thumbs.db
+.vscode/
