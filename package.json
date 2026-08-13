@@ -1,0 +1,27 @@
+{
+  "name": "gestor-de-portafolio-de-proyectos-freelancer",
+  "version": "0.0.1",
+  "description": "Interfaz que permite un control en el trabajo del FreeLancer ",
+  "keywords": [
+    "MongoDB",
+    "Nodejs"
+  ],
+  "homepage": "https://github.com/DeniseLH1/gestor-de-portafolio-de-proyectos-freelancer#readme",
+  "bugs": {
+    "url": "https://github.com/DeniseLH1/gestor-de-portafolio-de-proyectos-freelancer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeniseLH1/gestor-de-portafolio-de-proyectos-freelancer.git"
+  },
+  "license": "ISC",
+  "author": "DeniseLH1|juanlema-16",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "mongodb": "^7.5.0"
+  }
+}
