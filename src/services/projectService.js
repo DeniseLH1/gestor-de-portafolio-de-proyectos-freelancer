@@ -4,10 +4,9 @@ export class ProjectService {
         this.clientRepository = clientRepository;
     }
 
-        //Para resgistrar un nuevo proyectp en el sistema
-
+    // Para registrar un nuevo proyecto en el sistema
     async createProject(data) {
-    // Validaciones de campos obligatorios
+        // Validaciones de campos obligatorios
         if (!data.name || data.name.trim() === '') {
             throw new Error('El nombre del proyecto es obligatorio.');
         }
@@ -34,21 +33,21 @@ export class ProjectService {
             }
         }
 
-        // Asignación de estado por defecto si no se especificó y guardar
+        // Asignación de estado por defecto en español y guardar
         const projectData = {
             ...data,
-            status: data.status || 'PLANNED'
+            status: data.status || 'Planificado'
         };
 
         return await this.projectRepository.create(projectData);
     }
 
-        //Para obtener todos los proyectos registrados en el sistema
+    // Para obtener todos los proyectos registrados en el sistema
     async getAllProjects() {
         return await this.projectRepository.findAll();
     }
 
-    //obtener un proyecto por su ID
+    // Obtener un proyecto por su ID
     async getProjectById(id) {
         const project = await this.projectRepository.findById(id);
         if (!project) {
@@ -56,8 +55,8 @@ export class ProjectService {
         }
         return project;
     }
-    // Para obtener todos los proyectos asociados a un cliente
 
+    // Para obtener todos los proyectos asociados a un cliente
     async getProjectsByClient(clientId) {
         const client = await this.clientRepository.findById(clientId);
         if (!client) {
@@ -71,7 +70,7 @@ export class ProjectService {
         const validStatuses = ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'];
 
         if (!validStatuses.includes(newStatus)) {
-            throw new Error(`Estado inváldo. Los estados permitidos son: ${validStatuses.join(', ')}`);
+            throw new Error(`Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}`);
         }
 
         const project = await this.projectRepository.findById(id);
@@ -91,6 +90,13 @@ export class ProjectService {
 
         if (updateData.budget !== undefined && updateData.budget < 0) {
             throw new Error('El presupuesto no puede ser un monto negativo.');
+        }
+
+        // Validación de coherencia de fechas en la actualización
+        const startDate = updateData.startDate || project.startDate;
+        const endDate = updateData.endDate || project.endDate;
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            throw new Error('La fecha de finalización no puede ser anterior a la fecha de inicio.');
         }
 
         return await this.projectRepository.update(id, updateData);
