@@ -14,6 +14,8 @@ export async function clientMenu(commandFactory) {
           { name: '1. Registrar nuevo cliente', value: 'CREATE' },
           { name: '2. Listar todos los clientes', value: 'LIST' },
           { name: '3. Buscar cliente por ID', value: 'FIND' },
+          { name: '4. Actualizar cliente', value: 'UPDATE' },
+          { name: '5. Eliminar cliente', value: 'DELETE' },
           { name: 'Volver al Menú Principal', value: 'BACK' },
         ],
       },
@@ -54,9 +56,7 @@ export async function clientMenu(commandFactory) {
         }
 
         case 'FIND': {
-          const { id } = await inquirer.prompt([
-            { type: 'input', name: 'id', message: 'ID del cliente:' },
-          ]);
+          const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del cliente:' }]);
           const comando = commandFactory.create('buscar-cliente');
           const cliente = await comando.execute(id);
           console.log('\n--- Información del Cliente ---');
@@ -65,6 +65,39 @@ export async function clientMenu(commandFactory) {
             estado: formatEstado(cliente.estado),
             fechaRegistro: formatFecha(cliente.fechaRegistro),
           });
+          break;
+        }
+
+        case 'UPDATE': {
+          const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del cliente a actualizar:' }]);
+          const campos = await inquirer.prompt([
+            { type: 'input', name: 'nombre', message: 'Nuevo nombre (Enter para no cambiar):' },
+            { type: 'input', name: 'email', message: 'Nuevo email (Enter para no cambiar):' },
+            { type: 'input', name: 'telefono', message: 'Nuevo teléfono (Enter para no cambiar):' },
+            { type: 'input', name: 'empresa', message: 'Nueva empresa (Enter para no cambiar):' },
+          ]);
+          const data = {};
+          for (const [campo, valor] of Object.entries(campos)) {
+            if (valor) data[campo] = valor;
+          }
+          const comando = commandFactory.create('actualizar-cliente');
+          await comando.execute({ id, data });
+          console.log(`\n${exito('Cliente actualizado con éxito.')}\n`);
+          break;
+        }
+
+        case 'DELETE': {
+          const { id, confirmar } = await inquirer.prompt([
+            { type: 'input', name: 'id', message: 'ID del cliente a eliminar:' },
+            { type: 'confirm', name: 'confirmar', message: '¿Confirma que desea eliminar este cliente?', default: false },
+          ]);
+          if (!confirmar) {
+            console.log('\nOperación cancelada.\n');
+            break;
+          }
+          const comando = commandFactory.create('eliminar-cliente');
+          await comando.execute(id);
+          console.log(`\n${exito('Cliente eliminado con éxito.')}\n`);
           break;
         }
 
