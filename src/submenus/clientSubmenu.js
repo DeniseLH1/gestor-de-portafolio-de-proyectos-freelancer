@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import { formatEstado, formatFecha, exito, error } from '../utils/format.js';
 
 export async function clientMenu(commandFactory) {
   let mainLoop = true;
@@ -32,7 +33,7 @@ export async function clientMenu(commandFactory) {
 
           const comando = commandFactory.create('crear-cliente');
           const creado = await comando.execute(datos);
-          console.log(`\nCliente registrado con éxito. ID: ${creado._id}\n`);
+          console.log(`\n${exito(`Cliente registrado con éxito. ID: ${creado._id}`)}\n`);
           break;
         }
 
@@ -40,7 +41,15 @@ export async function clientMenu(commandFactory) {
           const comando = commandFactory.create('listar-clientes');
           const clientes = await comando.execute();
           console.log('\n--- Lista de Clientes ---');
-          console.table(clientes);
+          console.table(
+            clientes.map((c) => ({
+              id: c._id.toString(),
+              nombre: c.nombre,
+              email: c.email,
+              estado: formatEstado(c.estado),
+              fechaRegistro: formatFecha(c.fechaRegistro),
+            })),
+          );
           break;
         }
 
@@ -51,7 +60,11 @@ export async function clientMenu(commandFactory) {
           const comando = commandFactory.create('buscar-cliente');
           const cliente = await comando.execute(id);
           console.log('\n--- Información del Cliente ---');
-          console.log(cliente);
+          console.log({
+            ...cliente,
+            estado: formatEstado(cliente.estado),
+            fechaRegistro: formatFecha(cliente.fechaRegistro),
+          });
           break;
         }
 
@@ -59,8 +72,8 @@ export async function clientMenu(commandFactory) {
           mainLoop = false;
           break;
       }
-    } catch (error) {
-      console.error(`\nError: ${error.message}\n`);
+    } catch (e) {
+      console.error(`\n${error(e.message)}\n`);
     }
   }
 }
