@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
 
 export async function contractMenu(commandFactory) {
   let mainLoop = true;
@@ -32,7 +33,7 @@ export async function contractMenu(commandFactory) {
 
           const comando = commandFactory.create('crear-contrato');
           const creado = await comando.execute(datos);
-          console.log(`\nContrato registrado con éxito. ID: ${creado._id}\n`);
+          console.log(`\n${exito(`Contrato registrado con éxito. ID: ${creado._id}`)}\n`);
           break;
         }
 
@@ -40,7 +41,15 @@ export async function contractMenu(commandFactory) {
           const comando = commandFactory.create('listar-contratos');
           const contratos = await comando.execute();
           console.log('\n--- Lista de Contratos ---');
-          console.table(contratos);
+          console.table(
+            contratos.map((c) => ({
+              id: c._id.toString(),
+              fechaInicio: formatFecha(c.fechaInicio),
+              fechaFin: formatFecha(c.fechaFin),
+              valorTotal: formatMoneda(c.valorTotal),
+              status: formatEstado(c.status),
+            })),
+          );
           break;
         }
 
@@ -51,7 +60,13 @@ export async function contractMenu(commandFactory) {
           const comando = commandFactory.create('buscar-contrato');
           const contrato = await comando.execute(id);
           console.log('\n--- Información del Contrato ---');
-          console.log(contrato);
+          console.log({
+            ...contrato,
+            fechaInicio: formatFecha(contrato.fechaInicio),
+            fechaFin: formatFecha(contrato.fechaFin),
+            valorTotal: formatMoneda(contrato.valorTotal),
+            status: formatEstado(contrato.status),
+          });
           break;
         }
 
@@ -59,8 +74,8 @@ export async function contractMenu(commandFactory) {
           mainLoop = false;
           break;
       }
-    } catch (error) {
-      console.error(`\nError: ${error.message}\n`);
+    } catch (e) {
+      console.error(`\n${error(e.message)}\n`);
     }
   }
 }
