@@ -1,3 +1,5 @@
+import Proposal from '../models/proposal.js';
+
 export class ProposalService {
     constructor(proposalRepository, clientRepository) {
         this.proposalRepository = proposalRepository;
@@ -5,27 +7,20 @@ export class ProposalService {
     }
 
     async createProposal(data) {
-        if (!data.title || data.title.trim() === '') {
-            throw new Error('El título de la propuesta es obligatorio.');
-        }
-        if (!data.amount || data.amount <= 0) {
-            throw new Error('El monto ofertado debe ser mayor a 0.');
-        }
+        const proposal = new Proposal(data);
+        proposal.assertValid();
 
-        const client = await this.clientRepository.findById(data.clientId);
+        const client = await this.clientRepository.findById(proposal.clientId);
         if (!client) {
-            throw new Error(`No existe un cliente registrado con el ID ${data.clientId}.`);
+            throw new Error(`No existe un cliente registrado con el ID ${proposal.clientId}.`);
         }
 
-        if (data.validUntil && new Date(data.validUntil) < new Date()) {
+        if (proposal.validUntil && new Date(proposal.validUntil) < new Date()) {
             throw new Error('La fecha de vigencia debe ser posterior a la fecha actual.');
         }
 
-        return await this.proposalRepository.create({
-            ...data,
-            status: data.status || 'DRAFT'
-            });
-        }
+        return await this.proposalRepository.create(proposal);
+    }
 
     async getProposalById(id) {
         const proposal = await this.proposalRepository.findById(id);
@@ -45,7 +40,7 @@ export class ProposalService {
 
     async updateStatus(id, newStatus) {
         const validStatuses = ['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'EXPIRED'];
-    
+
         if (!validStatuses.includes(newStatus)) {
             throw new Error(`Estado no válido. Valores permitidos: ${validStatuses.join(', ')}`);
         }
