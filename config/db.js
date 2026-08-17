@@ -30,6 +30,10 @@ export async function connectDB() {
   return db;
 }
 
+export function getClient() {
+  return client;
+}
+
 export async function closeDB() {
   await client.close();
   db = undefined;
