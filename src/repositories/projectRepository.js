@@ -21,6 +21,15 @@ export class ProjectRepository extends BaseRepository {
         { returnDocument: 'after', ...options }
         );
     }
+
+    async updateStatus(projectId, status, options = {}) {
+        const objectId = this._toObjectId(projectId);
+        return await this.collection.findOneAndUpdate(
+        { _id: objectId },
+        { $set: { status, updatedAt: new Date() } },
+        { returnDocument: 'after', ...options }
+        );
+    }
 }
 
 export default ProjectRepository;
