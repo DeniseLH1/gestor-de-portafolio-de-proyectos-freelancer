@@ -7,7 +7,7 @@ export async function deliverableMenu(commandFactory) {
   while (mainLoop) {
     const { action } = await inquirer.prompt([
       {
-        type: 'list',
+        type: 'select',
         name: 'action',
         message: '--- GESTIÓN DE ENTREGABLES ---',
         choices: [
@@ -68,7 +68,7 @@ export async function deliverableMenu(commandFactory) {
           const campos = await inquirer.prompt([
             { type: 'input', name: 'descripcion', message: 'Nueva descripción (Enter para no cambiar):' },
             {
-              type: 'list',
+              type: 'select',
               name: 'status',
               message: 'Nuevo estado:',
               choices: ['(no cambiar)', 'pendiente', 'entregado', 'aprobado', 'rechazado'],

@@ -7,7 +7,7 @@ export async function projectMenu(commandFactory) {
   while (mainLoop) {
     const { action } = await inquirer.prompt([
       {
-        type: 'list',
+        type: 'select',
         name: 'action',
         message: '--- GESTIÓN DE PROYECTOS Y ENTREGABLES ---',
         choices: [
@@ -57,7 +57,7 @@ export async function projectMenu(commandFactory) {
           const { id, status } = await inquirer.prompt([
             { type: 'input', name: 'id', message: 'ID del Proyecto:' },
             {
-              type: 'list',
+              type: 'select',
               name: 'status',
               message: 'Seleccione el nuevo estado:',
               choices: ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'],

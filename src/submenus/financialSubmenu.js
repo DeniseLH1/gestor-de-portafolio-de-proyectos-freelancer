@@ -7,7 +7,7 @@ export async function financialMenu(commandFactory) {
   while (mainLoop) {
     const { action } = await inquirer.prompt([
       {
-        type: 'list',
+        type: 'select',
         name: 'action',
         message: '--- MÓDULO FINANCIERO ---',
         choices: [
@@ -24,7 +24,7 @@ export async function financialMenu(commandFactory) {
         case 'CREATE_TX': {
           const data = await inquirer.prompt([
             {
-              type: 'list',
+              type: 'select',
               name: 'type',
               message: 'Tipo de transacción:',
               choices: ['INCOME', 'EXPENSE'],
@@ -71,7 +71,7 @@ export async function financialMenu(commandFactory) {
           const { deliverableId, deliverableAction, newStatus } = await inquirer.prompt([
             { type: 'input', name: 'deliverableId', message: 'ID del Entregable:' },
             {
-              type: 'list',
+              type: 'select',
               name: 'deliverableAction',
               message: 'Acción a realizar:',
               choices: [
@@ -80,7 +80,7 @@ export async function financialMenu(commandFactory) {
               ],
             },
             {
-              type: 'list',
+              type: 'select',
               name: 'newStatus',
               message: 'Seleccione nuevo estado:',
               when: (answers) => answers.deliverableAction === 'CHANGE_STATUS',

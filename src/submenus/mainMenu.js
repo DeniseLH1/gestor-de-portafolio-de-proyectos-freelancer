@@ -52,7 +52,7 @@ export async function mainMenu() {
   while (mainLoop) {
     const { section } = await inquirer.prompt([
       {
-        type: 'list',
+        type: 'select',
         name: 'section',
         message: '=== GESTOR DE PORTAFOLIO FREELANCER ===',
         choices: [

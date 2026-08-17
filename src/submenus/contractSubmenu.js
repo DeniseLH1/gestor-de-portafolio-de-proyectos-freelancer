@@ -7,7 +7,7 @@ export async function contractMenu(commandFactory) {
   while (mainLoop) {
     const { action } = await inquirer.prompt([
       {
-        type: 'list',
+        type: 'select',
         name: 'action',
         message: '--- GESTIÓN DE CONTRATOS ---',
         choices: [

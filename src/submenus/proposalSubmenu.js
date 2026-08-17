@@ -7,7 +7,7 @@ export async function proposalMenu(commandFactory) {
   while (mainLoop) {
     const { action } = await inquirer.prompt([
       {
-        type: 'list',
+        type: 'select',
         name: 'action',
         message: '--- GESTIÓN DE PROPUESTAS Y PROYECTOS ---',
         choices: [
@@ -48,7 +48,7 @@ export async function proposalMenu(commandFactory) {
           const { id, newStatus } = await inquirer.prompt([
             { type: 'input', name: 'id', message: 'ID de la propuesta:' },
             {
-              type: 'list',
+              type: 'select',
               name: 'newStatus',
               message: 'Seleccione el nuevo estado:',
               choices: ['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'EXPIRED'],
