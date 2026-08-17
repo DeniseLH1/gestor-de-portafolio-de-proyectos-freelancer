@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import Table from 'cli-table3';
 import { formatEstado, formatFecha, exito, error } from '../utils/format.js';
 
 export async function clientMenu(commandFactory) {
@@ -43,15 +44,17 @@ export async function clientMenu(commandFactory) {
           const comando = commandFactory.create('listar-clientes');
           const clientes = await comando.execute();
           console.log('\n--- Lista de Clientes ---');
-          console.table(
-            clientes.map((c) => ({
-              id: c._id.toString(),
-              nombre: c.nombre,
-              email: c.email,
-              estado: formatEstado(c.estado),
-              fechaRegistro: formatFecha(c.fechaRegistro),
-            })),
-          );
+          const table = new Table({ head: ['ID', 'Nombre', 'Email', 'Estado', 'Fecha Registro'] });
+          clientes.forEach((c) => {
+            table.push([
+              c._id.toString(),
+              c.nombre,
+              c.email,
+              formatEstado(c.estado),
+              formatFecha(c.fechaRegistro),
+            ]);
+          });
+          console.log(table.toString());
           break;
         }
 
