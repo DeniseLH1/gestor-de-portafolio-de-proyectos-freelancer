@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import { formatEstado, formatFecha, exito, error } from '../utils/format.js';
 
 export async function deliverableMenu(commandFactory) {
   let mainLoop = true;
@@ -29,7 +30,7 @@ export async function deliverableMenu(commandFactory) {
 
           const comando = commandFactory.create('crear-entregable');
           const creado = await comando.execute(datos);
-          console.log(`\nEntregable registrado con éxito. ID: ${creado._id}\n`);
+          console.log(`\n${exito(`Entregable registrado con éxito. ID: ${creado._id}`)}\n`);
           break;
         }
 
@@ -37,7 +38,14 @@ export async function deliverableMenu(commandFactory) {
           const comando = commandFactory.create('listar-entregables');
           const entregables = await comando.execute();
           console.log('\n--- Lista de Entregables ---');
-          console.table(entregables);
+          console.table(
+            entregables.map((e) => ({
+              id: e._id.toString(),
+              descripcion: e.descripcion,
+              fechaLimite: formatFecha(e.fechaLimite),
+              status: formatEstado(e.status),
+            })),
+          );
           break;
         }
 
@@ -48,7 +56,11 @@ export async function deliverableMenu(commandFactory) {
           const comando = commandFactory.create('buscar-entregable');
           const entregable = await comando.execute(id);
           console.log('\n--- Información del Entregable ---');
-          console.log(entregable);
+          console.log({
+            ...entregable,
+            fechaLimite: formatFecha(entregable.fechaLimite),
+            status: formatEstado(entregable.status),
+          });
           break;
         }
 
@@ -56,8 +68,8 @@ export async function deliverableMenu(commandFactory) {
           mainLoop = false;
           break;
       }
-    } catch (error) {
-      console.error(`\nError: ${error.message}\n`);
+    } catch (e) {
+      console.error(`\n${error(e.message)}\n`);
     }
   }
 }
