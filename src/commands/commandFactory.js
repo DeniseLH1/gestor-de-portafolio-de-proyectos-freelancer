@@ -7,6 +7,17 @@ import FindContractCommand from './findContractCommand.js';
 import CreateDeliverableCommand from './createDeliverableCommand.js';
 import ListDeliverablesCommand from './listDeliverablesCommand.js';
 import FindDeliverableCommand from './findDeliverableCommand.js';
+import CreateProposalCommand from './createProposalCommand.js';
+import ListProposalsByClientCommand from './listProposalsByClientCommand.js';
+import UpdateProposalStatusCommand from './updateProposalStatusCommand.js';
+import ConvertProposalCommand from './convertProposalCommand.js';
+import CreateProjectCommand from './createProjectCommand.js';
+import ListProjectsCommand from './listProjectsCommand.js';
+import ListProjectsByClientCommand from './listProjectsByClientCommand.js';
+import UpdateProjectStatusCommand from './updateProjectStatusCommand.js';
+import CreateTransactionCommand from './createTransactionCommand.js';
+import GetBalanceCommand from './getBalanceCommand.js';
+import HandleDeliverableActionCommand from './handleDeliverableActionCommand.js';
 
 class CommandFactory {
   constructor(services) {
@@ -33,6 +44,28 @@ class CommandFactory {
         return new ListDeliverablesCommand(this.services.deliverableService);
       case 'buscar-entregable':
         return new FindDeliverableCommand(this.services.deliverableService);
+      case 'crear-propuesta':
+        return new CreateProposalCommand(this.services.proposalService);
+      case 'listar-propuestas-cliente':
+        return new ListProposalsByClientCommand(this.services.proposalService);
+      case 'actualizar-estado-propuesta':
+        return new UpdateProposalStatusCommand(this.services.proposalService);
+      case 'convertir-propuesta':
+        return new ConvertProposalCommand(this.services.proposalService, this.services.projectService);
+      case 'crear-proyecto':
+        return new CreateProjectCommand(this.services.projectService);
+      case 'listar-proyectos':
+        return new ListProjectsCommand(this.services.projectService);
+      case 'listar-proyectos-cliente':
+        return new ListProjectsByClientCommand(this.services.projectService);
+      case 'actualizar-estado-proyecto':
+        return new UpdateProjectStatusCommand(this.services.projectService);
+      case 'crear-transaccion':
+        return new CreateTransactionCommand(this.services.financialService);
+      case 'consultar-balance':
+        return new GetBalanceCommand(this.services.financialService);
+      case 'gestionar-entregable-financiero':
+        return new HandleDeliverableActionCommand(this.services.financialService);
       default:
         throw new Error(`No existe ningún comando llamado "${commandName}".`);
     }
