@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import Table from 'cli-table3';
 import { formatEstado, formatFecha, exito, error } from '../utils/format.js';
 
 export async function deliverableMenu(commandFactory) {
@@ -39,14 +40,16 @@ export async function deliverableMenu(commandFactory) {
           const comando = commandFactory.create('listar-entregables');
           const entregables = await comando.execute();
           console.log('\n--- Lista de Entregables ---');
-          console.table(
-            entregables.map((e) => ({
-              id: e._id.toString(),
-              descripcion: e.descripcion,
-              fechaLimite: formatFecha(e.fechaLimite),
-              status: formatEstado(e.status),
-            })),
-          );
+          const table = new Table({ head: ['ID', 'Descripción', 'Fecha Límite', 'Estado'] });
+          entregables.forEach((e) => {
+            table.push([
+              e._id.toString(),
+              e.descripcion,
+              formatFecha(e.fechaLimite),
+              formatEstado(e.status),
+            ]);
+          });
+          console.log(table.toString());
           break;
         }
 
