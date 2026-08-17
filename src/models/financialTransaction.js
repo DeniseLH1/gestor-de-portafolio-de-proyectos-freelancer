@@ -1,57 +1,48 @@
+import { ObjectId } from 'mongodb';
 import BaseModel from './baseModels.js';
 
 const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
-const TIPO_TRANSACCION = ['ingreso', 'egreso'];
+const TIPOS_TRANSACCION = ['INCOME', 'EXPENSE'];
 
 class Transaction extends BaseModel {
-    constructor({
-        tipo,
-        monto,
-        descripcion,
-        categoria,
-        proyectoId = null,
-        clienteId = null,
-        fecha = new Date(),
-    } = {}) {
-        super();
-        this.tipo = tipo;
-        this.monto = monto;
-        this.descripcion = descripcion;
-        this.categoria = categoria;
-        this.proyectoId = proyectoId;
-        this.clienteId = clienteId;
-        this.fecha = fecha;
-        this.validate();
+  constructor({ type, amount, reference = null, clientId = null, deliverableId = null } = {}) {
+    super();
+    this.type = type;
+    this.amount = amount;
+    this.reference = reference;
+    this.clientId = clientId;
+    this.deliverableId = deliverableId;
+  }
+
+  validate() {
+    this._isRequired(this.type, 'type') && this._isOneOf(this.type, 'type', TIPOS_TRANSACCION);
+
+    this._isRequired(this.amount, 'amount') &&
+      this._isType(this.amount, 'amount', 'number') &&
+      this._isInRange(this.amount, 'amount', 0.01, Number.MAX_SAFE_INTEGER);
+
+    if (this.reference) {
+      this._isType(this.reference, 'reference', 'string');
     }
 
-    validate() {
-    this._isRequired(this.tipo, 'tipo');
-    this._isOneOf(this.tipo, TIPO_TRANSACCION, 'tipo');
-
-    this._isRequired(this.monto, 'monto');
-    this._isType(this.monto, 'number', 'monto');
-    this._isInRange(this.monto, 0.01, Infinity, 'monto');
-
-    this._isRequired(this.descripcion, 'descripcion');
-    this._isType(this.descripcion, 'string', 'descripcion');
-
-    this._isRequired(this.categoria, 'categoria');
-    this._isType(this.categoria, 'string', 'categoria');
-
-    // 2. Validaciones para proyectoId y clienteId
-    if (this.proyectoId) {
-        this._matchesPattern(this.proyectoId, OBJECT_ID_REGEX, 'proyectoId');
+    if (this.clientId) {
+      this._matchesPattern(this.clientId, 'clientId', OBJECT_ID_REGEX, 'El clientId no tiene un formato válido.');
     }
 
-    if (this.clienteId) {
-        this._matchesPattern(this.clienteId, OBJECT_ID_REGEX, 'clienteId');
+    if (this.deliverableId) {
+      this._matchesPattern(this.deliverableId, 'deliverableId', OBJECT_ID_REGEX, 'El deliverableId no tiene un formato válido.');
     }
+  }
 
-    // 3. Validación de fecha
-    if (this.fecha && !(this.fecha instanceof Date) && isNaN(new Date(this.fecha).getTime())) {
-        throw new Error('La fecha proporcionada no es válida.');
-    }
-    }
+  toObject() {
+    return {
+      type: this.type,
+      amount: this.amount,
+      reference: this.reference,
+      clientId: this.clientId ? new ObjectId(this.clientId) : null,
+      deliverableId: this.deliverableId ? new ObjectId(this.deliverableId) : null,
+    };
+  }
 }
 
 export default Transaction;
