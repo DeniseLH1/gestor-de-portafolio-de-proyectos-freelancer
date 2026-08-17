@@ -5,7 +5,6 @@ export class ProposalService {
     }
 
     async createProposal(data) {
-        // Validación de campos requeridos
         if (!data.title || data.title.trim() === '') {
             throw new Error('El título de la propuesta es obligatorio.');
         }
@@ -13,23 +12,28 @@ export class ProposalService {
             throw new Error('El monto ofertado debe ser mayor a 0.');
         }
 
-        // Verificación de existencia del cliente asociado
         const client = await this.clientRepository.findById(data.clientId);
         if (!client) {
             throw new Error(`No existe un cliente registrado con el ID ${data.clientId}.`);
         }
 
-        // Validación de fecha de vigencia solo si aplica
         if (data.validUntil && new Date(data.validUntil) < new Date()) {
             throw new Error('La fecha de vigencia debe ser posterior a la fecha actual.');
         }
 
-        // Guardar propuesta
         return await this.proposalRepository.create({
             ...data,
             status: data.status || 'DRAFT'
             });
         }
+
+    async getProposalById(id) {
+        const proposal = await this.proposalRepository.findById(id);
+        if (!proposal) {
+            throw new Error(`No se encontró la propuesta con ID ${id}.`);
+        }
+        return proposal;
+    }
 
     async getProposalsByClient(clientId) {
         const client = await this.clientRepository.findById(clientId);
