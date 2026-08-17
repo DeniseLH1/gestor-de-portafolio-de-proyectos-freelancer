@@ -15,7 +15,7 @@ class ConvertProposalCommand extends Command {
 
     const projectData = {
       name: proposal.title,
-      clientId: proposal.clientId,
+      clientId: proposal.clientId.toString(),
       budget: proposal.amount,
       status: 'Planificado',
     };
