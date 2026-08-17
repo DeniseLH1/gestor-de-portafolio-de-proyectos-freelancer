@@ -1,12 +1,18 @@
 import CreateClientCommand from './createClientCommand.js';
 import ListClientsCommand from './listClientsCommand.js';
 import FindClientCommand from './findClientCommand.js';
+import UpdateClientCommand from './updateClientCommand.js';
+import DeleteClientCommand from './deleteClientCommand.js';
 import CreateContractCommand from './createContractCommand.js';
 import ListContractsCommand from './listContractsCommand.js';
 import FindContractCommand from './findContractCommand.js';
+import UpdateContractCommand from './updateContractCommand.js';
+import DeleteContractCommand from './deleteContractCommand.js';
 import CreateDeliverableCommand from './createDeliverableCommand.js';
 import ListDeliverablesCommand from './listDeliverablesCommand.js';
 import FindDeliverableCommand from './findDeliverableCommand.js';
+import UpdateDeliverableCommand from './updateDeliverableCommand.js';
+import DeleteDeliverableCommand from './deleteDeliverableCommand.js';
 import CreateProposalCommand from './createProposalCommand.js';
 import ListProposalsByClientCommand from './listProposalsByClientCommand.js';
 import UpdateProposalStatusCommand from './updateProposalStatusCommand.js';
@@ -32,18 +38,30 @@ class CommandFactory {
         return new ListClientsCommand(this.services.clientService);
       case 'buscar-cliente':
         return new FindClientCommand(this.services.clientService);
+      case 'actualizar-cliente':
+        return new UpdateClientCommand(this.services.clientService);
+      case 'eliminar-cliente':
+        return new DeleteClientCommand(this.services.clientService);
       case 'crear-contrato':
         return new CreateContractCommand(this.services.contractService);
       case 'listar-contratos':
         return new ListContractsCommand(this.services.contractService);
       case 'buscar-contrato':
         return new FindContractCommand(this.services.contractService);
+      case 'actualizar-contrato':
+        return new UpdateContractCommand(this.services.contractService);
+      case 'eliminar-contrato':
+        return new DeleteContractCommand(this.services.contractService);
       case 'crear-entregable':
         return new CreateDeliverableCommand(this.services.deliverableService);
       case 'listar-entregables':
         return new ListDeliverablesCommand(this.services.deliverableService);
       case 'buscar-entregable':
         return new FindDeliverableCommand(this.services.deliverableService);
+      case 'actualizar-entregable':
+        return new UpdateDeliverableCommand(this.services.deliverableService);
+      case 'eliminar-entregable':
+        return new DeleteDeliverableCommand(this.services.deliverableService);
       case 'crear-propuesta':
         return new CreateProposalCommand(this.services.proposalService);
       case 'listar-propuestas-cliente':
