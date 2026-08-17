@@ -14,6 +14,8 @@ export async function contractMenu(commandFactory) {
           { name: '1. Registrar nuevo contrato', value: 'CREATE' },
           { name: '2. Listar todos los contratos', value: 'LIST' },
           { name: '3. Buscar contrato por ID', value: 'FIND' },
+          { name: '4. Actualizar contrato', value: 'UPDATE' },
+          { name: '5. Eliminar contrato', value: 'DELETE' },
           { name: 'Volver al Menú Principal', value: 'BACK' },
         ],
       },
@@ -30,7 +32,6 @@ export async function contractMenu(commandFactory) {
             { type: 'number', name: 'valorTotal', message: 'Valor total:' },
             { type: 'input', name: 'condiciones', message: 'Condiciones del contrato:' },
           ]);
-
           const comando = commandFactory.create('crear-contrato');
           const creado = await comando.execute(datos);
           console.log(`\n${exito(`Contrato registrado con éxito. ID: ${creado._id}`)}\n`);
@@ -54,9 +55,7 @@ export async function contractMenu(commandFactory) {
         }
 
         case 'FIND': {
-          const { id } = await inquirer.prompt([
-            { type: 'input', name: 'id', message: 'ID del contrato:' },
-          ]);
+          const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del contrato:' }]);
           const comando = commandFactory.create('buscar-contrato');
           const contrato = await comando.execute(id);
           console.log('\n--- Información del Contrato ---');
@@ -67,6 +66,36 @@ export async function contractMenu(commandFactory) {
             valorTotal: formatMoneda(contrato.valorTotal),
             status: formatEstado(contrato.status),
           });
+          break;
+        }
+
+        case 'UPDATE': {
+          const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del contrato a actualizar:' }]);
+          const campos = await inquirer.prompt([
+            { type: 'input', name: 'condiciones', message: 'Nuevas condiciones (Enter para no cambiar):' },
+            { type: 'input', name: 'valorTotal', message: 'Nuevo valor total (Enter para no cambiar):' },
+          ]);
+          const data = {};
+          if (campos.condiciones) data.condiciones = campos.condiciones;
+          if (campos.valorTotal) data.valorTotal = Number(campos.valorTotal);
+          const comando = commandFactory.create('actualizar-contrato');
+          await comando.execute({ id, data });
+          console.log(`\n${exito('Contrato actualizado con éxito.')}\n`);
+          break;
+        }
+
+        case 'DELETE': {
+          const { id, confirmar } = await inquirer.prompt([
+            { type: 'input', name: 'id', message: 'ID del contrato a eliminar:' },
+            { type: 'confirm', name: 'confirmar', message: '¿Confirma que desea eliminar este contrato?', default: false },
+          ]);
+          if (!confirmar) {
+            console.log('\nOperación cancelada.\n');
+            break;
+          }
+          const comando = commandFactory.create('eliminar-contrato');
+          await comando.execute(id);
+          console.log(`\n${exito('Contrato eliminado con éxito.')}\n`);
           break;
         }
 
