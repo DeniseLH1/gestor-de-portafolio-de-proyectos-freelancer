@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import Table from 'cli-table3';
 import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
 
 export async function contractMenu(commandFactory) {
@@ -42,15 +43,17 @@ export async function contractMenu(commandFactory) {
           const comando = commandFactory.create('listar-contratos');
           const contratos = await comando.execute();
           console.log('\n--- Lista de Contratos ---');
-          console.table(
-            contratos.map((c) => ({
-              id: c._id.toString(),
-              fechaInicio: formatFecha(c.fechaInicio),
-              fechaFin: formatFecha(c.fechaFin),
-              valorTotal: formatMoneda(c.valorTotal),
-              status: formatEstado(c.status),
-            })),
-          );
+          const table = new Table({ head: ['ID', 'Fecha Inicio', 'Fecha Fin', 'Valor Total', 'Estado'] });
+          contratos.forEach((c) => {
+            table.push([
+              c._id.toString(),
+              formatFecha(c.fechaInicio),
+              formatFecha(c.fechaFin),
+              formatMoneda(c.valorTotal),
+              formatEstado(c.status),
+            ]);
+          });
+          console.log(table.toString());
           break;
         }
 
