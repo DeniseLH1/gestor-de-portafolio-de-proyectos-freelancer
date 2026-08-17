@@ -44,6 +44,18 @@ class Client extends BaseModel {
 
     this._isValidDate(this.fechaRegistro, 'fechaRegistro');
   }
+
+  toObject() {
+    return {
+      nombre: this.nombre,
+      email: this.email,
+      telefono: this.telefono,
+      dpi: this.dpi,
+      empresa: this.empresa,
+      estado: this.estado,
+      fechaRegistro: new Date(this.fechaRegistro),
+    };
+  }
 }
 
 export default Client;
