@@ -1,3 +1,5 @@
+import Transaction from '../models/financialTransaction.js';
+
 export class FinancialTransactionService {
     constructor(financialRepository, deliverableRepository, dbClient) {
         this.financialRepository = financialRepository;
@@ -5,34 +7,26 @@ export class FinancialTransactionService {
         this.dbClient = dbClient; 
     }
 
-    // Para registrar una transacción financiera (ingreso o egreso) en una transacción ACID para evitar duplicados
     async createTransaction(transactionData) {
+        const transaction = new Transaction(transactionData);
+        transaction.assertValid();
+
         const session = await this.dbClient.startSession();
         let createdTransaction;
 
         try {
             await session.withTransaction(async () => {
-                // Validaciones básicas
-                if (!['INCOME', 'EXPENSE'].includes(transactionData.type)) {
-                    throw new Error('El tipo debe ser "INCOME" o "EXPENSE".');
-                }
-                if (!transactionData.amount || transactionData.amount <= 0) {
-                    throw new Error('El monto debe ser un valor positivo.');
-                }
-
-                // Para prevenir duplicidad si viene un identificador único/referencia
-                if (transactionData.reference) {
+                if (transaction.reference) {
                     const existing = await this.financialRepository.findByReference(
-                        transactionData.reference,
+                        transaction.reference,
                         { session }
                     );
                     if (existing) {
-                        throw new Error(`La transacción con referencia "${transactionData.reference}" ya fue procesada.`);
+                        throw new Error(`La transacción con referencia "${transaction.reference}" ya fue procesada.`);
                     }
                 }
 
-                // Para crear registro dentro de la transacción
-                createdTransaction = await this.financialRepository.create(transactionData, { session });
+                createdTransaction = await this.financialRepository.create(transaction, { session });
             });
 
             return createdTransaction;
@@ -41,7 +35,6 @@ export class FinancialTransactionService {
         }
     }
 
-    // Para cambiar el estado de un entregable o eliminarlo, ejecutando rollback financiero si es necesario
     async handleDeliverableStatusOrDelete(deliverableId, action, newStatus = null) {
         const session = await this.dbClient.startSession();
 
@@ -53,12 +46,10 @@ export class FinancialTransactionService {
                 }
 
                 if (action === 'DELETE') {
-                    // Si el entregable tenía pagos asociados, revertir o eliminar registros financieros
                     await this.financialRepository.deleteByDeliverableId(deliverableId, { session });
                     await this.deliverableRepository.delete(deliverableId, { session });
                 } else if (action === 'CHANGE_STATUS') {
                     if (newStatus === 'CANCELLED') {
-                        // Rollback/Reversión de transacciones asociadas
                         await this.financialRepository.deleteByDeliverableId(deliverableId, { session });
                     }
                     await this.deliverableRepository.updateStatus(deliverableId, newStatus, { session });
@@ -71,11 +62,9 @@ export class FinancialTransactionService {
         }
     }
 
-    // Calcular el balance financiero general con opciones de filtrado
     async getBalanceSummary(filters = {}) {
         const { clientId, startDate, endDate } = filters;
 
-        // Validación de rango de fechas
         if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
             throw new Error('La fecha inicial no puede ser mayor que la fecha final.');
         }
