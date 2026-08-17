@@ -1,61 +1,78 @@
+import { ObjectId } from 'mongodb';
 import BaseModel from './baseModels.js';
 
 const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
-const ESTADOS_PROYECTO = ['activo', 'pausado', 'finalizado', 'cancelado'];
+const ESTADOS_PROYECTO = ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'];
 
 class Project extends BaseModel {
-    constructor({
-        nombre,
-        clienteId,
-        propuestaId = null,
-        contratoId = null,
-        presupuesto,
-        estado = 'activo',
-        // para almacenar registros de avances
-        avances = [], 
-        fechaInicio = new Date(),
-        fechaFin = null,
-    } = {}) {
-        super();
-        this.nombre = nombre;
-        this.clienteId = clienteId;
-        this.propuestaId = propuestaId;
-        this.contratoId = contratoId;
-        this.presupuesto = presupuesto;
-        this.estado = estado;
-        this.avances = avances;
-        this.fechaInicio = fechaInicio;
-        this.fechaFin = fechaFin;
+  constructor({
+    name,
+    clientId,
+    proposalId = null,
+    contractId = null,
+    budget,
+    status = 'Planificado',
+    advances = [],
+    startDate = new Date(),
+    endDate = null,
+  } = {}) {
+    super();
+    this.name = name;
+    this.clientId = clientId;
+    this.proposalId = proposalId;
+    this.contractId = contractId;
+    this.budget = budget;
+    this.status = status;
+    this.advances = advances;
+    this.startDate = startDate;
+    this.endDate = endDate;
+  }
+
+  validate() {
+    this._isRequired(this.name, 'name') && this._isType(this.name, 'name', 'string');
+
+    this._isRequired(this.clientId, 'clientId') &&
+      this._matchesPattern(this.clientId, 'clientId', OBJECT_ID_REGEX, 'El clientId no tiene un formato válido.');
+
+    if (this.proposalId) {
+      this._matchesPattern(this.proposalId, 'proposalId', OBJECT_ID_REGEX, 'El proposalId no tiene un formato válido.');
+    }
+    if (this.contractId) {
+      this._matchesPattern(this.contractId, 'contractId', OBJECT_ID_REGEX, 'El contractId no tiene un formato válido.');
     }
 
-    validate() {
-        this._isRequired(this.nombre, 'nombre') &&
-        this._isType(this.nombre, 'nombre', 'string');
+    this._isRequired(this.budget, 'budget') &&
+      this._isType(this.budget, 'budget', 'number') &&
+      this._isInRange(this.budget, 'budget', 0, 10000000);
 
-        this._isRequired(this.clienteId, 'clienteId') &&
-        this._matchesPattern(this.clienteId, 'clienteId', OBJECT_ID_REGEX, 'El cliente no tiene un formato válido.');
+    this._isOneOf(this.status, 'status', ESTADOS_PROYECTO);
 
-    if (this.propuestaId) {
-        this._matchesPattern(this.propuestaId, 'propuestaId', OBJECT_ID_REGEX, 'La propuesta no tiene un formato válido.');
+    if (!Array.isArray(this.advances)) {
+      this._errors.push('El campo "advances" debe ser un arreglo.');
     }
 
-    if (this.contratoId) {
-        this._matchesPattern(this.contratoId, 'contratoId', OBJECT_ID_REGEX, 'El contrato no tiene un formato válido.');
+    if (this.startDate && this.endDate) {
+      const inicio = new Date(this.startDate);
+      const fin = new Date(this.endDate);
+      if (!Number.isNaN(inicio.getTime()) && !Number.isNaN(fin.getTime()) && fin < inicio) {
+        this._errors.push('El campo "endDate" no puede ser anterior a "startDate".');
+      }
     }
+  }
 
-    this._isRequired(this.presupuesto, 'presupuesto') &&
-        this._isType(this.presupuesto, 'presupuesto', 'number') &&
-        this._isInRange(this.presupuesto, 'presupuesto', 0.01, 10000000);
-
-    this._isRequired(this.estado, 'estado') &&
-        this._isOneOf(this.estado, 'estado', ESTADOS_PROYECTO);
-
-    if (this.avances && !Array.isArray(this.avances)) {
-        throw new Error('Los avances deben ser un arreglo de registros.');
-    }
-
-    return true;
-    }
+  toObject() {
+    return {
+      name: this.name,
+      clientId: new ObjectId(this.clientId),
+      proposalId: this.proposalId ? new ObjectId(this.proposalId) : null,
+      contractId: this.contractId ? new ObjectId(this.contractId) : null,
+      budget: this.budget,
+      status: this.status,
+      advances: this.advances,
+      startDate: this.startDate ? new Date(this.startDate) : new Date(),
+      endDate: this.endDate ? new Date(this.endDate) : null,
+    };
+  }
 }
 
 export default Project;
