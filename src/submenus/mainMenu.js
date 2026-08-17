@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import connectDB, { getClient } from '../../config/db.js';
+import {connectDB,  getClient } from '../../config/db.js';
 import { ClientRepository } from '../repositories/clientRepository.js';
 import { ContractRepository } from '../repositories/contractRepository.js';
 import { DeliverableRepository } from '../repositories/deliverableRepository.js';

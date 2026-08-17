@@ -30,15 +30,3 @@ export async function closeDB() {
 }
 
 
-// Para convertir un string a ObjectId de MongoDB limpiando espacios y devolver un null si la entrada no es válida
-export function toObjectId(id) {
-  if (!id || typeof id !== "string") return null;
-  const cleanId = id.trim();
-  if (cleanId.length !== 24 || !ObjectId.isValid(cleanId)) {
-    return null;
-  }
-  return new ObjectId(cleanId);
-}
-
-export { ObjectId };
-export default connectDB;
