@@ -9,6 +9,20 @@ export class ContractRepository extends BaseRepository {
         return await this.collection.findOne({ projectId: objectId }, options);
     }
 
+        async findOne(query, options = {}) {
+        return await this.collection.findOne(query, options);
+    }
+
+    async updateByCustomId(id, data) {
+        const res = await this.collection.updateOne({ id: Number(id) }, { $set: data });
+        return res.modifiedCount > 0;
+    }
+
+    async deleteByCustomId(id) {
+        const res = await this.collection.deleteOne({ id: Number(id) });
+        return res.deletedCount > 0;
+    }
+
     async updateStatus(contractId, status, options = {}) {
         const objectId = this._toObjectId ? this._toObjectId(contractId) : contractId;
         return await this.collection.findOneAndUpdate(
