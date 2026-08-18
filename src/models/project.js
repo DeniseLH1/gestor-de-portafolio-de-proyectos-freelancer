@@ -1,8 +1,10 @@
 import { ObjectId } from 'mongodb';
 import BaseModel from './baseModels.js';
+import ValidationError from '../utils/ValidationError.js';
 
-const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
-const ESTADOS_PROYECTO = ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'];
+export const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
+export const NUMERIC_ID_REGEX = /^[0-9]+$/;
+export const ESTADOS_PROYECTO = ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'];
 
 class Project extends BaseModel {
   constructor({
@@ -29,47 +31,60 @@ class Project extends BaseModel {
   }
 
   validate() {
-    this._isRequired(this.name, 'name') && this._isType(this.name, 'name', 'string');
-
-    this._isRequired(this.clientId, 'clientId') &&
-      this._matchesPattern(this.clientId, 'clientId', OBJECT_ID_REGEX, 'El clientId no tiene un formato válido.');
-
-    if (this.proposalId) {
-      this._matchesPattern(this.proposalId, 'proposalId', OBJECT_ID_REGEX, 'El proposalId no tiene un formato válido.');
-    }
-    if (this.contractId) {
-      this._matchesPattern(this.contractId, 'contractId', OBJECT_ID_REGEX, 'El contractId no tiene un formato válido.');
+    if (!this.name || typeof this.name !== 'string' || !this.name.trim()) {
+      throw new ValidationError('El nombre del proyecto es obligatorio.');
     }
 
-    this._isRequired(this.budget, 'budget') &&
-      this._isType(this.budget, 'budget', 'number') &&
-      this._isInRange(this.budget, 'budget', 0, 10000000);
+    if (!this.clientId || !NUMERIC_ID_REGEX.test(String(this.clientId).trim())) {
+      throw new ValidationError('El clientId debe ser un número entero positivo.');
+    }
 
-    this._isOneOf(this.status, 'status', ESTADOS_PROYECTO);
+    if (this.proposalId && !OBJECT_ID_REGEX.test(String(this.proposalId).trim())) {
+      throw new ValidationError('El proposalId no tiene un formato válido.');
+    }
+
+    if (this.contractId && !NUMERIC_ID_REGEX.test(String(this.contractId).trim())) {
+      throw new ValidationError('El contractId debe ser un número entero positivo.');
+    }
+
+    if (this.budget === undefined || this.budget === null || typeof this.budget !== 'number' || this.budget < 0) {
+      throw new ValidationError('El presupuesto debe ser un número mayor o igual a 0.');
+    }
+
+    if (!ESTADOS_PROYECTO.includes(this.status)) {
+      throw new ValidationError(`El estado debe ser uno de: ${ESTADOS_PROYECTO.join(', ')}.`);
+    }
 
     if (!Array.isArray(this.advances)) {
-      this._errors.push('El campo "advances" debe ser un arreglo.');
+      throw new ValidationError('El campo "advances" debe ser un arreglo.');
     }
 
-    if (this.startDate && this.endDate) {
-      const inicio = new Date(this.startDate);
+    const inicio = new Date(this.startDate);
+    if (Number.isNaN(inicio.getTime())) {
+      throw new ValidationError('La fecha de inicio no es válida.');
+    }
+
+    if (this.endDate) {
       const fin = new Date(this.endDate);
-      if (!Number.isNaN(inicio.getTime()) && !Number.isNaN(fin.getTime()) && fin < inicio) {
-        this._errors.push('El campo "endDate" no puede ser anterior a "startDate".');
+      if (Number.isNaN(fin.getTime())) {
+        throw new ValidationError('La fecha de fin no es válida.');
+      }
+      if (fin < inicio) {
+        throw new ValidationError('La fecha de fin no puede ser anterior a la fecha de inicio.');
       }
     }
   }
 
   toObject() {
     return {
-      name: this.name,
-      clientId: new ObjectId(this.clientId),
+      name: this.name.trim(),
+      clientId: Number(this.clientId),
       proposalId: this.proposalId ? new ObjectId(this.proposalId) : null,
-      contractId: this.contractId ? new ObjectId(this.contractId) : null,
+      contractId: this.contractId ? Number(this.contractId) : null,
       budget: this.budget,
       status: this.status,
       advances: this.advances,
-      startDate: this.startDate ? new Date(this.startDate) : new Date(),
+      startDate: new Date(this.startDate),
       endDate: this.endDate ? new Date(this.endDate) : null,
     };
   }
