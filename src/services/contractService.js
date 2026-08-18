@@ -1,4 +1,6 @@
 import Contract from '../models/contracts.js';
+import ValidationError from '../utils/ValidationError.js';
+import { getNextSequenceValue } from '../utils/sequence.js';
 
 class ContractService {
   constructor(contractRepository, projectRepository, clientRepository) {
@@ -13,22 +15,33 @@ class ContractService {
 
     const proyecto = await this.projectRepository.findById(contract.projectId);
     if (!proyecto) {
-      throw new Error(`No existe ningún proyecto con id ${contract.projectId}.`);
+      throw new ValidationError(`No existe ningún proyecto con id ${contract.projectId}.`);
     }
 
-    const cliente = await this.clientRepository.findById(contract.clientId);
+    const cliente = await this.clientRepository.findOne({ id: Number(contract.clientId) });
     if (!cliente) {
-      throw new Error(`No existe ningún cliente con id ${contract.clientId}.`);
+      throw new ValidationError(`No existe ningún cliente con id ${contract.clientId}.`);
     }
 
-    const contratoGuardado = await this.contractRepository.create(contract);
-    return contratoGuardado;
+    const autoId = await getNextSequenceValue(this.contractRepository.collection.db, 'contracts_id');
+
+    const contractData = {
+      id: autoId,
+      ...contract.toObject(),
+    };
+
+    return await this.contractRepository.create(contractData);
   }
 
   async findById(id) {
-    const contrato = await this.contractRepository.findById(id);
+    const numericId = Number(id);
+    if (isNaN(numericId) || numericId <= 0) {
+      throw new ValidationError('El ID debe ser un número entero positivo.');
+    }
+
+    const contrato = await this.contractRepository.findOne({ id: numericId });
     if (!contrato) {
-      throw new Error(`No se encontró ningún contrato con id ${id}.`);
+      throw new ValidationError(`No se encontró ningún contrato con el ID ${numericId}.`);
     }
     return contrato;
   }
@@ -38,10 +51,7 @@ class ContractService {
   }
 
   async update(id, data) {
-    const existente = await this.contractRepository.findById(id);
-    if (!existente) {
-      throw new Error(`No se encontró ningún contrato con id ${id}.`);
-    }
+    const existente = await this.findById(id);
 
     const datosExistentes = {
       ...existente,
@@ -54,22 +64,22 @@ class ContractService {
 
     const proyecto = await this.projectRepository.findById(contract.projectId);
     if (!proyecto) {
-      throw new Error(`No existe ningún proyecto con id ${contract.projectId}.`);
+      throw new ValidationError(`No existe ningún proyecto con id ${contract.projectId}.`);
     }
 
-    const cliente = await this.clientRepository.findById(contract.clientId);
+    const cliente = await this.clientRepository.findOne({ id: Number(contract.clientId) });
     if (!cliente) {
-      throw new Error(`No existe ningún cliente con id ${contract.clientId}.`);
+      throw new ValidationError(`No existe ningún cliente con id ${contract.clientId}.`);
     }
 
-    const actualizado = await this.contractRepository.update(id, contract);
-    return actualizado;
+    return await this.contractRepository.updateByCustomId(existente.id, contract.toObject());
   }
 
   async delete(id) {
-    const eliminado = await this.contractRepository.delete(id);
+    const contrato = await this.findById(id);
+    const eliminado = await this.contractRepository.deleteByCustomId(contrato.id);
     if (!eliminado) {
-      throw new Error(`No se encontró ningún contrato con id ${id} para eliminar.`);
+      throw new ValidationError(`No se pudo eliminar el contrato con ID ${id}.`);
     }
     return eliminado;
   }
