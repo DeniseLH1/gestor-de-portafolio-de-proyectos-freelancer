@@ -40,7 +40,7 @@ export async function financialMenu(commandFactory) {
 
           const comando = commandFactory.create('crear-transaccion');
           const tx = await comando.execute(data);
-          console.log(`\n${exito(`Transacción financiera procesada bajo transacción ACID. ID: ${tx._id}`)}\n`);
+          console.log(`\n${exito(`Transacción financiera procesada bajo transacción ACID. ID: ${tx.id}`)}\n`);
           break;
         }
 
