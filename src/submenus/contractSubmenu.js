@@ -1,6 +1,32 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
 import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
+import { preguntarFecha, validarMonto } from '../utils/prompts.js';
+import { OBJECT_ID_REGEX, CLIENT_ID_REGEX } from '../models/contracts.js';
+
+const validateNumericId = (val) => {
+  const clean = val?.trim();
+  const num = Number(clean);
+  if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) {
+    return error('El ID debe ser un número entero positivo (ej: 1, 2, 3).');
+  }
+  return true;
+};
+
+function mostrarFichaContrato(c) {
+  const table = new Table({ head: ['Campo', 'Valor'], wordWrap: true });
+  table.push(
+    { 'ID': (c.id ?? c._id).toString() },
+    { 'ID Proyecto': c.projectId.toString() },
+    { 'ID Cliente': c.clientId.toString() },
+    { 'Fecha Inicio': formatFecha(c.fechaInicio) },
+    { 'Fecha Fin': formatFecha(c.fechaFin) },
+    { 'Valor Total': formatMoneda(c.valorTotal) },
+    { 'Condiciones': c.condiciones },
+    { 'Estado': formatEstado(c.status) },
+  );
+  console.log(table.toString());
+}
 
 export async function contractMenu(commandFactory) {
   let mainLoop = true;
@@ -25,17 +51,58 @@ export async function contractMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE': {
-          const datos = await inquirer.prompt([
-            { type: 'input', name: 'projectId', message: 'ID del proyecto:' },
-            { type: 'input', name: 'clientId', message: 'ID del cliente:' },
-            { type: 'input', name: 'fechaInicio', message: 'Fecha de inicio (YYYY-MM-DD):' },
-            { type: 'input', name: 'fechaFin', message: 'Fecha de fin (YYYY-MM-DD):' },
-            { type: 'number', name: 'valorTotal', message: 'Valor total:' },
-            { type: 'input', name: 'condiciones', message: 'Condiciones del contrato:' },
+          const parte1 = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'projectId',
+              message: 'ID del proyecto:',
+              validate: async (val) => {
+                const clean = val?.trim();
+                if (!OBJECT_ID_REGEX.test(clean)) return error('El ID del proyecto no tiene un formato válido.');
+                try {
+                  const proyectos = await commandFactory.create('listar-proyectos').execute();
+                  const existe = proyectos.some((p) => p._id.toString() === clean);
+                  if (!existe) return error(`No existe ningún proyecto con el ID "${clean}".`);
+                } catch {
+                  // Si falla la verificación, se permite continuar
+                }
+                return true;
+              },
+            },
+            {
+              type: 'input',
+              name: 'clientId',
+              message: 'ID del cliente:',
+              validate: async (val) => {
+                const clean = val?.trim();
+                if (!CLIENT_ID_REGEX.test(clean)) return error('El ID del cliente debe ser un número entero positivo.');
+                try {
+                  const clientes = await commandFactory.create('listar-clientes').execute();
+                  const existe = clientes.some((c) => Number(c.id) === Number(clean));
+                  if (!existe) return error(`No existe ningún cliente con el ID "${clean}".`);
+                } catch {
+                  // Continuar si falla la verificación
+                }
+                return true;
+              },
+            },
           ]);
+          const fechaInicio = await preguntarFecha('inicio del contrato');
+          const fechaFin = await preguntarFecha('fin del contrato');
+          const parte2 = await inquirer.prompt([
+            { type: 'number', name: 'valorTotal', message: 'Valor total:', validate: validarMonto },
+            {
+              type: 'input',
+              name: 'condiciones',
+              message: 'Condiciones del contrato:',
+              validate: (val) => (val && val.trim() ? true : error('Las condiciones son obligatorias.')),
+            },
+          ]);
+          const datos = { ...parte1, fechaInicio, fechaFin, ...parte2 };
+
           const comando = commandFactory.create('crear-contrato');
           const creado = await comando.execute(datos);
-          console.log(`\n${exito(`Contrato registrado con éxito. ID: ${creado._id}`)}\n`);
+          console.log(`\n${exito(`Contrato registrado con éxito. ID: ${creado.id}`)}\n`);
           break;
         }
 
@@ -43,10 +110,11 @@ export async function contractMenu(commandFactory) {
           const comando = commandFactory.create('listar-contratos');
           const contratos = await comando.execute();
           console.log('\n--- Lista de Contratos ---');
-          const table = new Table({ head: ['ID', 'Fecha Inicio', 'Fecha Fin', 'Valor Total', 'Estado'] });
+          const table = new Table({ head: ['ID', 'ID Cliente', 'Fecha Inicio', 'Fecha Fin', 'Valor Total', 'Estado'] });
           contratos.forEach((c) => {
             table.push([
-              c._id.toString(),
+              (c.id ?? c._id).toString(),
+              c.clientId.toString(),
               formatFecha(c.fechaInicio),
               formatFecha(c.fechaFin),
               formatMoneda(c.valorTotal),
@@ -58,38 +126,41 @@ export async function contractMenu(commandFactory) {
         }
 
         case 'FIND': {
-          const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del contrato:' }]);
+          const { id } = await inquirer.prompt([
+            { type: 'input', name: 'id', message: 'ID del contrato:', validate: validateNumericId },
+          ]);
           const comando = commandFactory.create('buscar-contrato');
-          const contrato = await comando.execute(id);
+          const contrato = await comando.execute(Number(id.trim()));
           console.log('\n--- Información del Contrato ---');
-          console.log({
-            ...contrato,
-            fechaInicio: formatFecha(contrato.fechaInicio),
-            fechaFin: formatFecha(contrato.fechaFin),
-            valorTotal: formatMoneda(contrato.valorTotal),
-            status: formatEstado(contrato.status),
-          });
+          mostrarFichaContrato(contrato);
           break;
         }
 
         case 'UPDATE': {
-          const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del contrato a actualizar:' }]);
+          const { id } = await inquirer.prompt([
+            { type: 'input', name: 'id', message: 'ID del contrato a actualizar:', validate: validateNumericId },
+          ]);
           const campos = await inquirer.prompt([
             { type: 'input', name: 'condiciones', message: 'Nuevas condiciones (Enter para no cambiar):' },
-            { type: 'input', name: 'valorTotal', message: 'Nuevo valor total (Enter para no cambiar):' },
+            {
+              type: 'input',
+              name: 'valorTotal',
+              message: 'Nuevo valor total (Enter para no cambiar):',
+              validate: (v) => (!v || (!Number.isNaN(Number(v)) && Number(v) > 0)) || error('El monto ingresado no es válido.'),
+            },
           ]);
           const data = {};
           if (campos.condiciones) data.condiciones = campos.condiciones;
           if (campos.valorTotal) data.valorTotal = Number(campos.valorTotal);
           const comando = commandFactory.create('actualizar-contrato');
-          await comando.execute({ id, data });
+          await comando.execute({ id: Number(id.trim()), data });
           console.log(`\n${exito('Contrato actualizado con éxito.')}\n`);
           break;
         }
 
         case 'DELETE': {
           const { id, confirmar } = await inquirer.prompt([
-            { type: 'input', name: 'id', message: 'ID del contrato a eliminar:' },
+            { type: 'input', name: 'id', message: 'ID del contrato a eliminar:', validate: validateNumericId },
             { type: 'confirm', name: 'confirmar', message: '¿Confirma que desea eliminar este contrato?', default: false },
           ]);
           if (!confirmar) {
@@ -97,7 +168,7 @@ export async function contractMenu(commandFactory) {
             break;
           }
           const comando = commandFactory.create('eliminar-contrato');
-          await comando.execute(id);
+          await comando.execute(Number(id.trim()));
           console.log(`\n${exito('Contrato eliminado con éxito.')}\n`);
           break;
         }
