@@ -1,7 +1,6 @@
 import BaseModel from './baseModels.js';
-import { ObjectId } from 'mongodb';
 
-const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
+const NUMERIC_ID_REGEX = /^[0-9]+$/;
 
 class Deliverable extends BaseModel {
   constructor({
@@ -19,7 +18,7 @@ class Deliverable extends BaseModel {
 
   validate() {
     this._isRequired(this.projectId, 'projectId') &&
-      this._matchesPattern(this.projectId, 'projectId', OBJECT_ID_REGEX, 'El projectId no tiene un formato válido.');
+      this._matchesPattern(this.projectId, 'projectId', NUMERIC_ID_REGEX, 'El projectId debe ser un número entero positivo.');
 
     this._isRequired(this.descripcion, 'descripcion') &&
       this._isType(this.descripcion, 'descripcion', 'string');
@@ -32,7 +31,7 @@ class Deliverable extends BaseModel {
 
   toObject() {
     return {
-      projectId: new ObjectId(this.projectId),
+      projectId: Number(this.projectId),
       descripcion: this.descripcion,
       fechaLimite: new Date(this.fechaLimite),
       status: this.status,

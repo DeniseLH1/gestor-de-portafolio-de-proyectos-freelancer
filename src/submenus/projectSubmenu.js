@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
 import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
-import { preguntarFecha, validarMonto } from '../utils/prompts.js';
+import { validarMonto } from '../utils/prompts.js';
 import { NUMERIC_ID_REGEX } from '../models/project.js';
 
 const validateNumericId = (val) => {
@@ -12,6 +12,11 @@ const validateNumericId = (val) => {
   }
   return true;
 };
+
+const validarDia = (v) => { const n = Number(v); return (Number.isInteger(n) && n >= 1 && n <= 31) || error('Ingresa un día válido, entre 1 y 31.'); };
+const validarMes = (v) => { const n = Number(v); return (Number.isInteger(n) && n >= 1 && n <= 12) || error('Ingresa un mes válido, entre 1 y 12.'); };
+const validarAnio = (v) => { const n = Number(v); return (Number.isInteger(n) && n >= 2000 && n <= 2100) || error('Ingresa un año válido.'); };
+const armarFecha = (dia, mes, anio) => `${anio}-${String(Number(mes)).padStart(2, '0')}-${String(Number(dia)).padStart(2, '0')}`;
 
 export async function projectMenu(commandFactory) {
   let mainLoop = true;
@@ -35,7 +40,7 @@ export async function projectMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE': {
-          const parte1 = await inquirer.prompt([
+          const r = await inquirer.prompt([
             { type: 'input', name: 'name', message: 'Nombre del proyecto:', validate: (v) => (v && v.trim() ? true : error('El nombre es obligatorio.')) },
             {
               type: 'input',
@@ -53,10 +58,21 @@ export async function projectMenu(commandFactory) {
               },
             },
             { type: 'number', name: 'budget', message: 'Presupuesto inicial:', validate: validarMonto },
+            { type: 'input', name: 'diaInicio', message: 'Día de inicio del proyecto (1-31):', validate: validarDia },
+            { type: 'input', name: 'mesInicio', message: 'Mes de inicio del proyecto (1-12):', validate: validarMes },
+            { type: 'input', name: 'anioInicio', message: 'Año de inicio del proyecto (ej. 2026):', validate: validarAnio },
+            { type: 'input', name: 'diaFin', message: 'Día de fin estimado (1-31):', validate: validarDia },
+            { type: 'input', name: 'mesFin', message: 'Mes de fin estimado (1-12):', validate: validarMes },
+            { type: 'input', name: 'anioFin', message: 'Año de fin estimado (ej. 2026):', validate: validarAnio },
           ]);
-          const startDate = await preguntarFecha('inicio del proyecto');
-          const endDate = await preguntarFecha('fin estimado del proyecto');
-          const data = { ...parte1, startDate, endDate };
+
+          const data = {
+            name: r.name,
+            clientId: r.clientId,
+            budget: r.budget,
+            startDate: armarFecha(r.diaInicio, r.mesInicio, r.anioInicio),
+            endDate: armarFecha(r.diaFin, r.mesFin, r.anioFin),
+          };
 
           const comando = commandFactory.create('crear-proyecto');
           const proyecto = await comando.execute(data);

@@ -1,8 +1,6 @@
-import { ObjectId } from 'mongodb';
 import BaseModel from './baseModels.js';
 import ValidationError from '../utils/ValidationError.js';
 
-export const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
 export const NUMERIC_ID_REGEX = /^[0-9]+$/;
 export const ESTADOS_PROYECTO = ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'];
 
@@ -39,8 +37,8 @@ class Project extends BaseModel {
       throw new ValidationError('El clientId debe ser un número entero positivo.');
     }
 
-    if (this.proposalId && !OBJECT_ID_REGEX.test(String(this.proposalId).trim())) {
-      throw new ValidationError('El proposalId no tiene un formato válido.');
+    if (this.proposalId && !NUMERIC_ID_REGEX.test(String(this.proposalId).trim())) {
+      throw new ValidationError('El proposalId debe ser un número entero positivo.');
     }
 
     if (this.contractId && !NUMERIC_ID_REGEX.test(String(this.contractId).trim())) {
@@ -79,7 +77,7 @@ class Project extends BaseModel {
     return {
       name: this.name.trim(),
       clientId: Number(this.clientId),
-      proposalId: this.proposalId ? new ObjectId(this.proposalId) : null,
+      proposalId: this.proposalId ? Number(this.proposalId) : null,
       contractId: this.contractId ? Number(this.contractId) : null,
       budget: this.budget,
       status: this.status,

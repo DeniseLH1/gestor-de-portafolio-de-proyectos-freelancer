@@ -5,27 +5,18 @@ export class FinancialRepository extends BaseRepository {
         super(db, 'transactions');
     }
 
-    async findByProjectId(projectId, options = {}) {
-        const objectId = this._toObjectId(projectId);
-        return await this.collection.find({ proyectoId: objectId }, options).toArray();
+    async findOne(query, options = {}) {
+        return await this.collection.findOne(query, options);
     }
 
-    async getBalanceGeneral(options = {}) {
-        const transactions = await this.collection.find({}, options).toArray();
+    async updateByCustomId(id, data, options = {}) {
+        const res = await this.collection.updateOne({ id: Number(id) }, { $set: data }, options);
+        return res.modifiedCount > 0;
+    }
 
-        const totalIngresos = transactions
-        .filter((t) => t.tipo === 'ingreso')
-        .reduce((acc, t) => acc + Number(t.monto), 0);
-
-        const totalEgresos = transactions
-        .filter((t) => t.tipo === 'egreso')
-        .reduce((acc, t) => acc + Number(t.monto), 0);
-
-        return {
-        totalIngresos,
-        totalEgresos,
-        balanceNeto: totalIngresos - totalEgresos,
-        };
+    async deleteByCustomId(id, options = {}) {
+        const res = await this.collection.deleteOne({ id: Number(id) }, options);
+        return res.deletedCount > 0;
     }
 
     async findByReference(reference, options = {}) {
@@ -33,14 +24,13 @@ export class FinancialRepository extends BaseRepository {
     }
 
     async deleteByDeliverableId(deliverableId, options = {}) {
-        const objectId = this._toObjectId(deliverableId);
-        return await this.collection.deleteMany({ deliverableId: objectId }, options);
+        return await this.collection.deleteMany({ deliverableId: Number(deliverableId) }, options);
     }
 
     async getFiltered(filters = {}, options = {}) {
         const query = {};
         if (filters.clientId) {
-            query.clientId = this._toObjectId(filters.clientId);
+            query.clientId = Number(filters.clientId);
         }
         if (filters.startDate || filters.endDate) {
             query.createdAt = {};

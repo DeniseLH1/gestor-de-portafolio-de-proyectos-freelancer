@@ -32,7 +32,7 @@ export async function deliverableMenu(commandFactory) {
           ]);
           const comando = commandFactory.create('crear-entregable');
           const creado = await comando.execute(datos);
-          console.log(`\n${exito(`Entregable registrado con éxito. ID: ${creado._id}`)}\n`);
+          console.log(`\n${exito(`Entregable registrado con éxito. ID: ${creado.id}`)}\n`);
           break;
         }
 
@@ -43,7 +43,7 @@ export async function deliverableMenu(commandFactory) {
           const table = new Table({ head: ['ID', 'Descripción', 'Fecha Límite', 'Estado'] });
           entregables.forEach((e) => {
             table.push([
-              e._id.toString(),
+              e.id,
               e.descripcion,
               formatFecha(e.fechaLimite),
               formatEstado(e.status),

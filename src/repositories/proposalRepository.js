@@ -5,15 +5,27 @@ export class ProposalRepository extends BaseRepository {
         super(db, 'proposals');
     }
 
+    async findOne(query, options = {}) {
+        return await this.collection.findOne(query, options);
+    }
+
     async findByClientId(clientId, options = {}) {
-        const objectId = this._toObjectId(clientId);
-        return await this.collection.find({ clientId: objectId }, options).toArray();
+        return await this.collection.find({ clientId: Number(clientId) }, options).toArray();
+    }
+
+    async updateByCustomId(id, data, options = {}) {
+        const res = await this.collection.updateOne({ id: Number(id) }, { $set: data }, options);
+        return res.modifiedCount > 0;
+    }
+
+    async deleteByCustomId(id, options = {}) {
+        const res = await this.collection.deleteOne({ id: Number(id) }, options);
+        return res.deletedCount > 0;
     }
 
     async updateStatus(proposalId, status, options = {}) {
-        const objectId = this._toObjectId(proposalId);
         return await this.collection.findOneAndUpdate(
-        { _id: objectId },
+        { id: Number(proposalId) },
         { $set: { status, updatedAt: new Date() } },
         { returnDocument: 'after', ...options }
         );
