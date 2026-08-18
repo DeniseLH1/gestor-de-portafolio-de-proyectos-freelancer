@@ -1,4 +1,6 @@
 import Project from '../models/project.js';
+import ValidationError from '../utils/ValidationError.js';
+import { getNextSequenceValue } from '../utils/sequence.js';
 
 export class ProjectService {
     constructor(projectRepository, clientRepository) {
@@ -10,12 +12,15 @@ export class ProjectService {
         const project = new Project(data);
         project.assertValid();
 
-        const client = await this.clientRepository.findById(project.clientId);
+        const client = await this.clientRepository.findOne({ id: Number(project.clientId) });
         if (!client) {
-            throw new Error(`No se encontró ningún cliente registrado con el ID ${project.clientId}.`);
+            throw new ValidationError(`No se encontró ningún cliente registrado con el ID ${project.clientId}.`);
         }
 
-        return await this.projectRepository.create(project);
+        const autoId = await getNextSequenceValue(this.projectRepository.collection.db, 'projects_id');
+        const projectData = { id: autoId, ...project.toObject() };
+
+        return await this.projectRepository.create(projectData);
     }
 
     async getAllProjects() {
@@ -23,17 +28,21 @@ export class ProjectService {
     }
 
     async getProjectById(id) {
-        const project = await this.projectRepository.findById(id);
+        const numericId = Number(id);
+        if (isNaN(numericId) || numericId <= 0) {
+            throw new ValidationError('El ID debe ser un número entero positivo.');
+        }
+        const project = await this.projectRepository.findOne({ id: numericId });
         if (!project) {
-            throw new Error(`El proyecto con ID ${id} no existe.`);
+            throw new ValidationError(`El proyecto con ID ${numericId} no existe.`);
         }
         return project;
     }
 
     async getProjectsByClient(clientId) {
-        const client = await this.clientRepository.findById(clientId);
+        const client = await this.clientRepository.findOne({ id: Number(clientId) });
         if (!client) {
-            throw new Error(`El cliente con ID ${clientId} no existe.`);
+            throw new ValidationError(`El cliente con ID ${clientId} no existe.`);
         }
         return await this.projectRepository.findByClientId(clientId);
     }
@@ -42,22 +51,15 @@ export class ProjectService {
         const validStatuses = ['Planificado', 'En progreso', 'En espera', 'Completado', 'Cancelado'];
 
         if (!validStatuses.includes(newStatus)) {
-            throw new Error(`Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}`);
+            throw new ValidationError(`Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}`);
         }
 
-        const project = await this.projectRepository.findById(id);
-        if (!project) {
-            throw new Error(`No se encontró el proyecto con ID ${id}.`);
-        }
-
-        return await this.projectRepository.updateStatus(id, newStatus);
+        const project = await this.getProjectById(id);
+        return await this.projectRepository.updateByCustomId(project.id, { status: newStatus });
     }
 
     async updateProject(id, updateData) {
-        const existente = await this.projectRepository.findById(id);
-        if (!existente) {
-            throw new Error(`El proyecto con ID ${id} no existe.`);
-        }
+        const existente = await this.getProjectById(id);
 
         const datosExistentes = {
             ...existente,
@@ -69,6 +71,6 @@ export class ProjectService {
         const project = new Project({ ...datosExistentes, ...updateData });
         project.assertValid();
 
-        return await this.projectRepository.update(id, project);
+        return await this.projectRepository.updateByCustomId(existente.id, project.toObject());
     }
 }
