@@ -30,7 +30,7 @@ export async function proposalMenu(commandFactory) {
           ]);
           const comando = commandFactory.create('crear-propuesta');
           const propuesta = await comando.execute(data);
-          console.log(`\n${exito(`Propuesta creada con éxito. ID: ${propuesta._id}`)}\n`);
+          console.log(`\n${exito(`Propuesta creada con éxito. ID: ${propuesta.id}`)}\n`);
           break;
         }
 
@@ -66,7 +66,7 @@ export async function proposalMenu(commandFactory) {
           ]);
           const comando = commandFactory.create('convertir-propuesta');
           const nuevoProyecto = await comando.execute(proposalId);
-          console.log(`\n${exito(`Propuesta convertida en Proyecto. Nuevo ID de Proyecto: ${nuevoProyecto._id}`)}\n`);
+          console.log(`\n${exito(`Propuesta convertida en Proyecto. Nuevo ID de Proyecto: ${nuevoProyecto.id}`)}\n`);
           break;
         }
 

@@ -1,4 +1,5 @@
 import Transaction from '../models/financialTransaction.js';
+import { getNextSequenceValue } from '../utils/sequence.js';
 
 export class FinancialTransactionService {
     constructor(financialRepository, deliverableRepository, dbClient) {
@@ -26,7 +27,10 @@ export class FinancialTransactionService {
                     }
                 }
 
-                createdTransaction = await this.financialRepository.create(transaction, { session });
+                const autoId = await getNextSequenceValue(this.financialRepository.collection.db, 'transactions_id');
+                const doc = { id: autoId, ...transaction.toObject() };
+
+                createdTransaction = await this.financialRepository.create(doc, { session });
             });
 
             return createdTransaction;
@@ -40,14 +44,17 @@ export class FinancialTransactionService {
 
         try {
             await session.withTransaction(async () => {
-                const deliverable = await this.deliverableRepository.findById(deliverableId, { session });
+                const deliverable = await this.deliverableRepository.findOne(
+                    { id: Number(deliverableId) },
+                    { session }
+                );
                 if (!deliverable) {
                     throw new Error(`El entregable con ID ${deliverableId} no existe.`);
                 }
 
                 if (action === 'DELETE') {
                     await this.financialRepository.deleteByDeliverableId(deliverableId, { session });
-                    await this.deliverableRepository.delete(deliverableId, { session });
+                    await this.deliverableRepository.deleteByCustomId(deliverableId, { session });
                 } else if (action === 'CHANGE_STATUS') {
                     if (newStatus === 'CANCELLED') {
                         await this.financialRepository.deleteByDeliverableId(deliverableId, { session });

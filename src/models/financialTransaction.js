@@ -1,7 +1,6 @@
-import { ObjectId } from 'mongodb';
 import BaseModel from './baseModels.js';
 
-const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
+const NUMERIC_ID_REGEX = /^[0-9]+$/;
 const TIPOS_TRANSACCION = ['INCOME', 'EXPENSE'];
 
 class Transaction extends BaseModel {
@@ -26,11 +25,11 @@ class Transaction extends BaseModel {
     }
 
     if (this.clientId) {
-      this._matchesPattern(this.clientId, 'clientId', OBJECT_ID_REGEX, 'El clientId no tiene un formato válido.');
+      this._matchesPattern(this.clientId, 'clientId', NUMERIC_ID_REGEX, 'El clientId debe ser un número entero positivo.');
     }
 
     if (this.deliverableId) {
-      this._matchesPattern(this.deliverableId, 'deliverableId', OBJECT_ID_REGEX, 'El deliverableId no tiene un formato válido.');
+      this._matchesPattern(this.deliverableId, 'deliverableId', NUMERIC_ID_REGEX, 'El deliverableId debe ser un número entero positivo.');
     }
   }
 
@@ -39,8 +38,8 @@ class Transaction extends BaseModel {
       type: this.type,
       amount: this.amount,
       reference: this.reference,
-      clientId: this.clientId ? new ObjectId(this.clientId) : null,
-      deliverableId: this.deliverableId ? new ObjectId(this.deliverableId) : null,
+      clientId: this.clientId ? Number(this.clientId) : null,
+      deliverableId: this.deliverableId ? Number(this.deliverableId) : null,
     };
   }
 }
