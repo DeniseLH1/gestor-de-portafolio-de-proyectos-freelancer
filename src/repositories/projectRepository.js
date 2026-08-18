@@ -6,29 +6,32 @@ export class ProjectRepository extends BaseRepository {
     }
 
     async findByClientId(clientId, options = {}) {
-        const objectId = this._toObjectId(clientId);
-        return await this.collection.find({ clientId: objectId }, options).toArray();
+        return await this.collection.find({ clientId: Number(clientId) }, options).toArray();
     }
 
     async addAdvance(projectId, advanceData, options = {}) {
-        const objectId = this._toObjectId(projectId);
         return await this.collection.findOneAndUpdate(
-        { _id: objectId },
-        { 
-            $push: { avances: { ...advanceData, fecha: new Date() } },
+        { id: Number(projectId) },
+        {
+            $push: { advances: { ...advanceData, fecha: new Date() } },
             $set: { updatedAt: new Date() }
         },
         { returnDocument: 'after', ...options }
         );
     }
 
-    async updateStatus(projectId, status, options = {}) {
-        const objectId = this._toObjectId(projectId);
-        return await this.collection.findOneAndUpdate(
-        { _id: objectId },
-        { $set: { status, updatedAt: new Date() } },
-        { returnDocument: 'after', ...options }
-        );
+    async findOne(query, options = {}) {
+        return await this.collection.findOne(query, options);
+    }
+
+    async updateByCustomId(id, data) {
+        const res = await this.collection.updateOne({ id: Number(id) }, { $set: data });
+        return res.modifiedCount > 0;
+    }
+
+    async deleteByCustomId(id) {
+        const res = await this.collection.deleteOne({ id: Number(id) });
+        return res.deletedCount > 0;
     }
 }
 
