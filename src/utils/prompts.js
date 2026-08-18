@@ -1,4 +1,3 @@
-S
 import inquirer from 'inquirer';
  
 export async function preguntarFecha(etiqueta) {
