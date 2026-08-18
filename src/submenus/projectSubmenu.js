@@ -1,5 +1,17 @@
 import inquirer from 'inquirer';
-import { exito, error } from '../utils/format.js';
+import Table from 'cli-table3';
+import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
+import { preguntarFecha, validarMonto } from '../utils/prompts.js';
+import { NUMERIC_ID_REGEX } from '../models/project.js';
+
+const validateNumericId = (val) => {
+  const clean = val?.trim();
+  const num = Number(clean);
+  if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) {
+    return error('El ID debe ser un número entero positivo (ej: 1, 2, 3).');
+  }
+  return true;
+};
 
 export async function projectMenu(commandFactory) {
   let mainLoop = true;
@@ -23,39 +35,78 @@ export async function projectMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE': {
-          const data = await inquirer.prompt([
-            { type: 'input', name: 'name', message: 'Nombre del proyecto:' },
-            { type: 'input', name: 'clientId', message: 'ID del Cliente:' },
-            { type: 'number', name: 'budget', message: 'Presupuesto inicial:' },
-            { type: 'input', name: 'startDate', message: 'Fecha de inicio (YYYY-MM-DD):' },
-            { type: 'input', name: 'endDate', message: 'Fecha estimada fin (YYYY-MM-DD):' },
+          const parte1 = await inquirer.prompt([
+            { type: 'input', name: 'name', message: 'Nombre del proyecto:', validate: (v) => (v && v.trim() ? true : error('El nombre es obligatorio.')) },
+            {
+              type: 'input',
+              name: 'clientId',
+              message: 'ID del Cliente:',
+              validate: async (val) => {
+                const clean = val?.trim();
+                if (!NUMERIC_ID_REGEX.test(clean)) return error('El ID del cliente debe ser un número entero positivo.');
+                try {
+                  const clientes = await commandFactory.create('listar-clientes').execute();
+                  const existe = clientes.some((c) => Number(c.id) === Number(clean));
+                  if (!existe) return error(`No existe ningún cliente con el ID "${clean}".`);
+                } catch {}
+                return true;
+              },
+            },
+            { type: 'number', name: 'budget', message: 'Presupuesto inicial:', validate: validarMonto },
           ]);
+          const startDate = await preguntarFecha('inicio del proyecto');
+          const endDate = await preguntarFecha('fin estimado del proyecto');
+          const data = { ...parte1, startDate, endDate };
+
           const comando = commandFactory.create('crear-proyecto');
           const proyecto = await comando.execute(data);
-          console.log(`\n${exito(`Proyecto registrado con éxito. ID: ${proyecto._id}`)}\n`);
+          console.log(`\n${exito(`Proyecto registrado con éxito. ID: ${proyecto.id}`)}\n`);
           break;
         }
 
         case 'LIST': {
           const comando = commandFactory.create('listar-proyectos');
           const proyectos = await comando.execute();
-          console.table(proyectos);
+          console.log('\n--- Lista de Proyectos ---');
+          const table = new Table({ head: ['ID', 'Nombre', 'ID Cliente', 'Presupuesto', 'Estado', 'Fecha Inicio'] });
+          proyectos.forEach((p) => {
+            table.push([
+              (p.id ?? p._id).toString(),
+              p.name,
+              p.clientId.toString(),
+              formatMoneda(p.budget),
+              formatEstado(p.status),
+              formatFecha(p.startDate),
+            ]);
+          });
+          console.log(table.toString());
           break;
         }
 
         case 'BY_CLIENT': {
           const { clientId } = await inquirer.prompt([
-            { type: 'input', name: 'clientId', message: 'ID del Cliente:' },
+            { type: 'input', name: 'clientId', message: 'ID del Cliente:', validate: validateNumericId },
           ]);
           const comando = commandFactory.create('listar-proyectos-cliente');
-          const proyectos = await comando.execute(clientId);
-          console.table(proyectos);
+          const proyectos = await comando.execute(Number(clientId.trim()));
+          console.log('\n--- Proyectos del Cliente ---');
+          const table = new Table({ head: ['ID', 'Nombre', 'Presupuesto', 'Estado', 'Fecha Inicio'] });
+          proyectos.forEach((p) => {
+            table.push([
+              (p.id ?? p._id).toString(),
+              p.name,
+              formatMoneda(p.budget),
+              formatEstado(p.status),
+              formatFecha(p.startDate),
+            ]);
+          });
+          console.log(table.toString());
           break;
         }
 
         case 'UPDATE_STATUS': {
           const { id, status } = await inquirer.prompt([
-            { type: 'input', name: 'id', message: 'ID del Proyecto:' },
+            { type: 'input', name: 'id', message: 'ID del Proyecto:', validate: validateNumericId },
             {
               type: 'select',
               name: 'status',
@@ -64,7 +115,7 @@ export async function projectMenu(commandFactory) {
             },
           ]);
           const comando = commandFactory.create('actualizar-estado-proyecto');
-          await comando.execute({ id, status });
+          await comando.execute({ id: Number(id.trim()), status });
           console.log(`\n${exito(`Estado actualizado a "${status}" con éxito.`)}\n`);
           break;
         }
