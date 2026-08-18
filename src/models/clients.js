@@ -1,8 +1,9 @@
 import BaseModel from './baseModels.js';
+import ValidationError from '../utils/ValidationError.js';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TELEFONO_REGEX = /^\+?[0-9]{7,15}$/;
-const DPI_REGEX = /^[0-9]{13}$/;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const TELEFONO_REGEX = /^\+?[0-9]{7,15}$/;
+export const DPI_REGEX = /^[0-9]{13}$/;
 
 class Client extends BaseModel {
   constructor({
@@ -25,33 +26,38 @@ class Client extends BaseModel {
   }
 
   validate() {
-    this._isRequired(this.nombre, 'nombre') && this._isType(this.nombre, 'nombre', 'string');
-
-    this._isRequired(this.email, 'email') &&
-      this._matchesPattern(this.email, 'email', EMAIL_REGEX, 'El email no tiene un formato válido.');
-
-    this._isRequired(this.telefono, 'telefono') &&
-      this._matchesPattern(this.telefono, 'telefono', TELEFONO_REGEX, 'El teléfono debe tener entre 7 y 15 dígitos.');
-
-    this._isRequired(this.dpi, 'dpi') &&
-      this._matchesPattern(this.dpi, 'dpi', DPI_REGEX, 'El DPI debe tener exactamente 13 dígitos numéricos.');
-
-    if (this.empresa !== null) {
-      this._isType(this.empresa, 'empresa', 'string');
+    if (!this.nombre || typeof this.nombre !== 'string' || !this.nombre.trim()) {
+      throw new ValidationError('El nombre es un campo obligatorio.');
     }
 
-    this._isOneOf(this.estado, 'estado', ['activo', 'inactivo']);
+    if (!this.email || !EMAIL_REGEX.test(this.email.trim())) {
+      throw new ValidationError('El email no tiene un formato válido.');
+    }
 
-    this._isValidDate(this.fechaRegistro, 'fechaRegistro');
+    if (!this.telefono || !TELEFONO_REGEX.test(this.telefono.trim())) {
+      throw new ValidationError('El teléfono debe tener entre 7 y 15 dígitos.');
+    }
+
+    if (!this.dpi || !DPI_REGEX.test(this.dpi.trim())) {
+      throw new ValidationError('El DPI debe tener exactamente 13 dígitos numéricos.');
+    }
+
+    if (this.empresa !== null && typeof this.empresa !== 'string') {
+      throw new ValidationError('El nombre de la empresa debe ser una cadena de texto.');
+    }
+
+    if (!['activo', 'inactivo'].includes(this.estado)) {
+      throw new ValidationError('El estado debe ser "activo" o "inactivo".');
+    }
   }
 
   toObject() {
     return {
-      nombre: this.nombre,
-      email: this.email,
-      telefono: this.telefono,
-      dpi: this.dpi,
-      empresa: this.empresa,
+      nombre: this.nombre.trim(),
+      email: this.email.trim(),
+      telefono: this.telefono.trim(),
+      dpi: this.dpi.trim(),
+      empresa: this.empresa ? this.empresa.trim() : null,
       estado: this.estado,
       fechaRegistro: new Date(this.fechaRegistro),
     };
