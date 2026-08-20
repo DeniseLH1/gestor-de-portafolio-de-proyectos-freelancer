@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
 import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
-import { preguntarFecha, validarMonto } from '../utils/prompts.js';
+import { preguntasFecha, armarFecha, validarMonto } from '../utils/prompts.js';
 import { CLIENT_ID_REGEX, PROJECT_ID_REGEX } from '../models/contracts.js';
 
 const validateNumericId = (val) => {
@@ -45,7 +45,7 @@ export async function contractMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE': {
-          const parte1 = await inquirer.prompt([
+          const r = await inquirer.prompt([
             { type: 'input', name: 'projectId', message: 'ID del proyecto:',
               validate: async (val) => {
                 const clean = val?.trim();
@@ -68,14 +68,19 @@ export async function contractMenu(commandFactory) {
                 } catch {}
                 return true;
               } },
-          ]);
-          const fechaInicio = await preguntarFecha('inicio del contrato');
-          const fechaFin = await preguntarFecha('fin del contrato');
-          const parte2 = await inquirer.prompt([
+            ...preguntasFecha('inicio del contrato', 'inicio'),
+            ...preguntasFecha('fin del contrato', 'fin'),
             { type: 'number', name: 'valorTotal', message: 'Valor total:', validate: validarMonto },
             { type: 'input', name: 'condiciones', message: 'Condiciones del contrato:', validate: (val) => (val && val.trim() ? true : error('Las condiciones son obligatorias.')) },
           ]);
-          const datos = { ...parte1, fechaInicio, fechaFin, ...parte2 };
+          const datos = {
+            projectId: r.projectId,
+            clientId: r.clientId,
+            fechaInicio: armarFecha(r.inicioDia, r.inicioMes, r.inicioAnio),
+            fechaFin: armarFecha(r.finDia, r.finMes, r.finAnio),
+            valorTotal: r.valorTotal,
+            condiciones: r.condiciones,
+          };
           const comando = commandFactory.create('crear-contrato');
           const creado = await comando.execute(datos);
           console.log(`\n${exito(`Contrato registrado con éxito. ID: ${creado.id}`)}\n`);
