@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
 import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
-import { validarMonto } from '../utils/prompts.js';
+import { preguntasFecha, armarFecha, validarMonto } from '../utils/prompts.js';
 import { NUMERIC_ID_REGEX } from '../models/project.js';
 
 const validateNumericId = (val) => {
@@ -13,11 +13,6 @@ const validateNumericId = (val) => {
   return true;
 };
 
-const validarDia = (v) => { const n = Number(v); return (Number.isInteger(n) && n >= 1 && n <= 31) || error('Ingresa un día válido, entre 1 y 31.'); };
-const validarMes = (v) => { const n = Number(v); return (Number.isInteger(n) && n >= 1 && n <= 12) || error('Ingresa un mes válido, entre 1 y 12.'); };
-const validarAnio = (v) => { const n = Number(v); return (Number.isInteger(n) && n >= 2000 && n <= 2100) || error('Ingresa un año válido.'); };
-const armarFecha = (dia, mes, anio) => `${anio}-${String(Number(mes)).padStart(2, '0')}-${String(Number(dia)).padStart(2, '0')}`;
-
 export async function projectMenu(commandFactory) {
   let mainLoop = true;
 
@@ -26,7 +21,7 @@ export async function projectMenu(commandFactory) {
       {
         type: 'select',
         name: 'action',
-        message: '--- GESTIÓN DE PROYECTOS Y ENTREGABLES ---',
+        message: '--- GESTIÓN DE PROYECTOS ---',
         choices: [
           { name: '1. Registrar nuevo proyecto', value: 'CREATE' },
           { name: '2. Listar todos los proyectos', value: 'LIST' },
@@ -58,20 +53,16 @@ export async function projectMenu(commandFactory) {
               },
             },
             { type: 'number', name: 'budget', message: 'Presupuesto inicial:', validate: validarMonto },
-            { type: 'input', name: 'diaInicio', message: 'Día de inicio del proyecto (1-31):', validate: validarDia },
-            { type: 'input', name: 'mesInicio', message: 'Mes de inicio del proyecto (1-12):', validate: validarMes },
-            { type: 'input', name: 'anioInicio', message: 'Año de inicio del proyecto (ej. 2026):', validate: validarAnio },
-            { type: 'input', name: 'diaFin', message: 'Día de fin estimado (1-31):', validate: validarDia },
-            { type: 'input', name: 'mesFin', message: 'Mes de fin estimado (1-12):', validate: validarMes },
-            { type: 'input', name: 'anioFin', message: 'Año de fin estimado (ej. 2026):', validate: validarAnio },
+            ...preguntasFecha('inicio del proyecto', 'inicio'),
+            ...preguntasFecha('fin estimado del proyecto', 'fin'),
           ]);
 
           const data = {
             name: r.name,
             clientId: r.clientId,
             budget: r.budget,
-            startDate: armarFecha(r.diaInicio, r.mesInicio, r.anioInicio),
-            endDate: armarFecha(r.diaFin, r.mesFin, r.anioFin),
+            startDate: armarFecha(r.inicioDia, r.inicioMes, r.inicioAnio),
+            endDate: armarFecha(r.finDia, r.finMes, r.finAnio),
           };
 
           const comando = commandFactory.create('crear-proyecto');
