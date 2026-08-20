@@ -25,7 +25,8 @@ export function preguntasFecha(etiqueta, prefijo) {
 }
 
 export function validarMonto(valor) {
-  if (valor === undefined || valor === null || Number.isNaN(valor) || valor <= 0) {
+  const num = Number(valor);
+  if (valor === undefined || valor === null || valor === '' || Number.isNaN(num) || num <= 0) {
     return 'El monto ingresado no es válido. Debe ser un número mayor a 0.';
   }
   return true;
