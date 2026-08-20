@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { exito, error } from '../utils/format.js';
+import { exito, error, mostrarError } from '../utils/format.js';
 import { validarMonto } from '../utils/prompts.js';
 
 const NUMERIC_ID_REGEX = /^[0-9]+$/;
@@ -95,6 +95,6 @@ export async function financialMenu(commandFactory) {
         }
         case 'BACK': mainLoop = false; break;
       }
-    } catch (e) { console.error(`\n${error(e.message)}\n`); }
+    } catch (e) { mostrarError(e); }
   }
 }

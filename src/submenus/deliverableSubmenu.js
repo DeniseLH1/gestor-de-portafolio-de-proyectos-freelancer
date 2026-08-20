@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
-import { formatEstado, formatFecha, exito, error } from '../utils/format.js';
+import { formatEstado, formatFecha, exito, error, mostrarError } from '../utils/format.js';
 import { preguntasFecha, armarFecha } from '../utils/prompts.js';
 import { NUMERIC_ID_REGEX } from '../models/deliverables.js';
 
@@ -99,6 +99,6 @@ export async function deliverableMenu(commandFactory) {
         }
         case 'BACK': mainLoop = false; break;
       }
-    } catch (e) { console.error(`\n${error(e.message)}\n`); }
+    } catch (e) { mostrarError(e); }
   }
 }

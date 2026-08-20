@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
-import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
+import { formatEstado, formatFecha, formatMoneda, exito, error, mostrarError } from '../utils/format.js';
 import { preguntasFecha, armarFecha, validarMonto } from '../utils/prompts.js';
 import { CLIENT_ID_REGEX, PROJECT_ID_REGEX } from '../models/contracts.js';
 
@@ -129,6 +129,6 @@ export async function contractMenu(commandFactory) {
         }
         case 'BACK': mainLoop = false; break;
       }
-    } catch (e) { console.error(`\n${error(e.message)}\n`); }
+    } catch (e) { mostrarError(e); }
   }
 }
