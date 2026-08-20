@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
-import { formatEstado, formatMoneda, exito, error, mostrarError } from '../utils/format.js';
+import { formatEstado, formatMoneda, exito, mostrarError } from '../utils/format.js';
 import { validarMonto } from '../utils/prompts.js';
 import { NUMERIC_ID_REGEX } from '../models/proposal.js';
 
@@ -8,7 +8,7 @@ const validateNumericId = (val) => {
   const clean = val?.trim();
   const num = Number(clean);
   if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) {
-    return error('El ID debe ser un número entero positivo (ej: 1, 2, 3).');
+    return 'El ID debe ser un número entero positivo (ej: 1, 2, 3).';
   }
   return true;
 };
@@ -29,21 +29,22 @@ export async function proposalMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE': {
-          const data = await inquirer.prompt([
+          const r = await inquirer.prompt([
             { type: 'input', name: 'clientId', message: 'ID del Cliente:',
               validate: async (val) => {
                 const clean = val?.trim();
-                if (!NUMERIC_ID_REGEX.test(clean)) return error('El ID del cliente debe ser un número entero positivo.');
+                if (!NUMERIC_ID_REGEX.test(clean)) return 'El ID del cliente debe ser un número entero positivo.';
                 try {
                   const clientes = await commandFactory.create('listar-clientes').execute();
                   const existe = clientes.some((c) => Number(c.id) === Number(clean));
-                  if (!existe) return error(`No existe ningún cliente con el ID "${clean}".`);
+                  if (!existe) return `No existe ningún cliente con el ID "${clean}".`;
                 } catch {}
                 return true;
               } },
-            { type: 'input', name: 'title', message: 'Título de la propuesta:', validate: (val) => (val && val.trim() ? true : error('El título es obligatorio.')) },
-            { type: 'number', name: 'amount', message: 'Monto de la propuesta:', validate: validarMonto },
+            { type: 'input', name: 'title', message: 'Título de la propuesta:', validate: (val) => (val && val.trim() ? true : 'El título es obligatorio.') },
+            { type: 'input', name: 'amount', message: 'Monto de la propuesta:', validate: validarMonto },
           ]);
+          const data = { clientId: r.clientId, title: r.title, amount: Number(r.amount) };
           const comando = commandFactory.create('crear-propuesta');
           const propuesta = await comando.execute(data);
           console.log(`\n${exito(`Propuesta creada con éxito. ID: ${propuesta.id}`)}\n`);
