@@ -1,6 +1,6 @@
 import BaseModel from './baseModels.js';
 
-const NUMERIC_ID_REGEX = /^[0-9]+$/;
+export const NUMERIC_ID_REGEX = /^[0-9]+$/;
 const TIPOS_TRANSACCION = ['INCOME', 'EXPENSE'];
 
 class Transaction extends BaseModel {
