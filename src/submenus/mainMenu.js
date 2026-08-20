@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import {connectDB,  getClient } from '../../config/db.js';
+import { connectDB, getClient } from '../../config/db.js';
 import { ClientRepository } from '../repositories/clientRepository.js';
 import { ContractRepository } from '../repositories/contractRepository.js';
 import { DeliverableRepository } from '../repositories/deliverableRepository.js';
@@ -57,10 +57,10 @@ export async function mainMenu() {
         message: '=== GESTOR DE PORTAFOLIO FREELANCER ===',
         choices: [
           { name: '1. Clientes', value: 'CLIENTS' },
-          { name: '2. Contratos', value: 'CONTRACTS' },
-          { name: '3. Entregables', value: 'DELIVERABLES' },
-          { name: '4. Propuestas y Conversión a Proyectos', value: 'PROPOSALS' },
-          { name: '5. Proyectos', value: 'PROJECTS' },
+          { name: '2. Propuestas', value: 'PROPOSALS' },
+          { name: '3. Proyectos', value: 'PROJECTS' },
+          { name: '4. Contratos', value: 'CONTRACTS' },
+          { name: '5. Entregables', value: 'DELIVERABLES' },
           { name: '6. Finanzas', value: 'FINANCIAL' },
           { name: 'Salir', value: 'EXIT' },
         ],
