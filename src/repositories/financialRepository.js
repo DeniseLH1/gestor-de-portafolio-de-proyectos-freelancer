@@ -39,6 +39,29 @@ export class FinancialRepository extends BaseRepository {
         }
         return await this.collection.find(query, options).toArray();
     }
+
+    async getResumenAgregadoPorCliente(clientId) {
+        const pipeline = [
+            { $match: { clientId: Number(clientId) } },
+            {
+                $group: {
+                    _id: '$type',
+                    total: { $sum: '$amount' },
+                },
+            },
+        ];
+
+        const resultados = await this.collection.aggregate(pipeline).toArray();
+
+        const totalIngresos = resultados.find((r) => r._id === 'INCOME')?.total || 0;
+        const totalEgresos = resultados.find((r) => r._id === 'EXPENSE')?.total || 0;
+
+        return {
+            totalIngresos,
+            totalEgresos,
+            balanceNeto: totalIngresos - totalEgresos,
+        };
+    }
 }
 
 export default FinancialRepository;
