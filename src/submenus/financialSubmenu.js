@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { exito, error, mostrarError } from '../utils/format.js';
+import { exito, mostrarError } from '../utils/format.js';
 import { validarMonto } from '../utils/prompts.js';
 
 const NUMERIC_ID_REGEX = /^[0-9]+$/;
@@ -7,9 +7,7 @@ const NUMERIC_ID_REGEX = /^[0-9]+$/;
 const validateNumericId = (val) => {
   const clean = val?.trim();
   const num = Number(clean);
-  if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) {
-    return error('El ID debe ser un número entero positivo (ej: 1, 2, 3).');
-  }
+  if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) return 'El ID debe ser un número entero positivo (ej: 1, 2, 3).';
   return true;
 };
 
@@ -28,19 +26,19 @@ export async function financialMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE_TX': {
-          const data = await inquirer.prompt([
+          const r = await inquirer.prompt([
             { type: 'select', name: 'type', message: 'Tipo de transacción:', choices: ['INCOME', 'EXPENSE'] },
-            { type: 'number', name: 'amount', message: 'Monto:', validate: validarMonto },
+            { type: 'input', name: 'amount', message: 'Monto:', validate: validarMonto },
             { type: 'input', name: 'reference', message: 'Referencia / Código único (Opcional, Enter para omitir):' },
             { type: 'input', name: 'clientId', message: 'ID del cliente asociado (Opcional, Enter para omitir):',
               validate: async (val) => {
                 if (!val || !val.trim()) return true;
                 const clean = val.trim();
-                if (!NUMERIC_ID_REGEX.test(clean)) return error('El ID del cliente debe ser un número entero positivo.');
+                if (!NUMERIC_ID_REGEX.test(clean)) return 'El ID del cliente debe ser un número entero positivo.';
                 try {
                   const clientes = await commandFactory.create('listar-clientes').execute();
                   const existe = clientes.some((c) => Number(c.id) === Number(clean));
-                  if (!existe) return error(`No existe ningún cliente con el ID "${clean}".`);
+                  if (!existe) return `No existe ningún cliente con el ID "${clean}".`;
                 } catch {}
                 return true;
               } },
@@ -48,18 +46,19 @@ export async function financialMenu(commandFactory) {
               validate: async (val) => {
                 if (!val || !val.trim()) return true;
                 const clean = val.trim();
-                if (!NUMERIC_ID_REGEX.test(clean)) return error('El ID del entregable debe ser un número entero positivo.');
+                if (!NUMERIC_ID_REGEX.test(clean)) return 'El ID del entregable debe ser un número entero positivo.';
                 try {
                   const entregables = await commandFactory.create('listar-entregables').execute();
                   const existe = entregables.some((e) => Number(e.id) === Number(clean));
-                  if (!existe) return error(`No existe ningún entregable con el ID "${clean}".`);
+                  if (!existe) return `No existe ningún entregable con el ID "${clean}".`;
                 } catch {}
                 return true;
               } },
           ]);
-          if (!data.reference) delete data.reference;
-          if (!data.clientId) delete data.clientId;
-          if (!data.deliverableId) delete data.deliverableId;
+          const data = { type: r.type, amount: Number(r.amount) };
+          if (r.reference) data.reference = r.reference;
+          if (r.clientId) data.clientId = r.clientId;
+          if (r.deliverableId) data.deliverableId = r.deliverableId;
 
           const comando = commandFactory.create('crear-transaccion');
           const tx = await comando.execute(data);
