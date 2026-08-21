@@ -101,4 +101,8 @@ export class FinancialTransactionService {
             transactionCount: transactions.length
         };
     }
+
+    async getResumenPorCliente(clientId) {
+        return await this.financialRepository.getResumenAgregadoPorCliente(clientId);
+    }
 }
