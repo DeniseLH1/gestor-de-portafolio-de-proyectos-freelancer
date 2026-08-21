@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import { exito, mostrarError } from '../utils/format.js';
 import { validarMonto } from '../utils/prompts.js';
+import { generarResumenFinancieroCliente } from '../commands/resumenFinanciero.js';   
 
 const NUMERIC_ID_REGEX = /^[0-9]+$/;
 
@@ -20,6 +21,7 @@ export async function financialMenu(commandFactory) {
           { name: '1. Registrar Transacción (Ingreso / Egreso)', value: 'CREATE_TX' },
           { name: '2. Consultar Balance General / Filtros', value: 'BALANCE' },
           { name: '3. Gestionar Estado/Eliminación de Entregables (Rollback)', value: 'DELIVERABLE_ACTION' },
+          { name: '4. Generar resumen financiero por cliente', value: 'GENERAR_RESUMEN'},
           { name: 'Volver al Menú Principal', value: 'BACK' },
         ] },
     ]);
@@ -92,6 +94,10 @@ export async function financialMenu(commandFactory) {
           console.log(`\n${exito('Operación sobre el entregable y rollback financiero ejecutados con éxito.')}\n`);
           break;
         }
+        case 'GENERAR_RESUMEN':{
+
+        }
+
         case 'BACK': mainLoop = false; break;
       }
     } catch (e) { mostrarError(e); }
