@@ -50,6 +50,8 @@ export async function mainMenu() {
   let mainLoop = true;
 
   while (mainLoop) {
+    console.clear();
+
     const { section } = await inquirer.prompt([
       {
         type: 'select',
@@ -69,21 +71,27 @@ export async function mainMenu() {
 
     switch (section) {
       case 'CLIENTS':
+        console.clear();
         await clientMenu(commandFactory);
         break;
       case 'CONTRACTS':
+        console.clear();
         await contractMenu(commandFactory);
         break;
       case 'DELIVERABLES':
+        console.clear();
         await deliverableMenu(commandFactory);
         break;
       case 'PROPOSALS':
+        console.clear();
         await proposalMenu(commandFactory);
         break;
       case 'PROJECTS':
+        console.clear();
         await projectMenu(commandFactory);
         break;
       case 'FINANCIAL':
+        console.clear();
         await financialMenu(commandFactory);
         break;
       case 'EXIT':
