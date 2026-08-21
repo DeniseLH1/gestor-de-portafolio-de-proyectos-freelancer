@@ -1,6 +1,7 @@
 import CreateClientCommand from './createClientCommand.js';
 import ListClientsCommand from './listClientsCommand.js';
 import FindClientCommand from './findClientCommand.js';
+import FindClientByNameCommand from './findClientByNameCommand.js';
 import UpdateClientCommand from './updateClientCommand.js';
 import DeleteClientCommand from './deleteClientCommand.js';
 import CreateContractCommand from './createContractCommand.js';
@@ -24,6 +25,7 @@ import UpdateProjectStatusCommand from './updateProjectStatusCommand.js';
 import CreateTransactionCommand from './createTransactionCommand.js';
 import GetBalanceCommand from './getBalanceCommand.js';
 import HandleDeliverableActionCommand from './handleDeliverableActionCommand.js';
+import GetClientFinancialSummaryCommand from './getClientFinancialSummaryCommand.js';
 
 class CommandFactory {
   constructor(services) {
@@ -38,6 +40,8 @@ class CommandFactory {
         return new ListClientsCommand(this.services.clientService);
       case 'buscar-cliente':
         return new FindClientCommand(this.services.clientService);
+      case 'buscar-cliente-nombre':
+        return new FindClientByNameCommand(this.services.clientService);
       case 'actualizar-cliente':
         return new UpdateClientCommand(this.services.clientService);
       case 'eliminar-cliente':
@@ -84,6 +88,8 @@ class CommandFactory {
         return new GetBalanceCommand(this.services.financialService);
       case 'gestionar-entregable-financiero':
         return new HandleDeliverableActionCommand(this.services.financialService);
+      case 'resumen-financiero-cliente':
+        return new GetClientFinancialSummaryCommand(this.services.financialService);
       default:
         throw new Error(`No existe ningún comando llamado "${commandName}".`);
     }
