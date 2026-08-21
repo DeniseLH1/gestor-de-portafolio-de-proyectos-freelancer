@@ -1,29 +1,22 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
-import { formatEstado, formatFecha, formatMoneda, exito, error } from '../utils/format.js';
-import { preguntarFecha, validarMonto } from '../utils/prompts.js';
+import { formatEstado, formatFecha, formatMoneda, exito, mostrarError } from '../utils/format.js';
+import { preguntasFecha, armarFecha, validarMonto } from '../utils/prompts.js';
 import { CLIENT_ID_REGEX, PROJECT_ID_REGEX } from '../models/contracts.js';
 
 const validateNumericId = (val) => {
   const clean = val?.trim();
   const num = Number(clean);
-  if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) {
-    return error('El ID debe ser un número entero positivo (ej: 1, 2, 3).');
-  }
+  if (!clean || isNaN(num) || num <= 0 || !Number.isInteger(num)) return 'El ID debe ser un número entero positivo (ej: 1, 2, 3).';
   return true;
 };
 
 function mostrarFichaContrato(c) {
   const table = new Table({ head: ['Campo', 'Valor'], wordWrap: true });
   table.push(
-    { 'ID': (c.id ?? c._id).toString() },
-    { 'ID Proyecto': c.projectId.toString() },
-    { 'ID Cliente': c.clientId.toString() },
-    { 'Fecha Inicio': formatFecha(c.fechaInicio) },
-    { 'Fecha Fin': formatFecha(c.fechaFin) },
-    { 'Valor Total': formatMoneda(c.valorTotal) },
-    { 'Condiciones': c.condiciones },
-    { 'Estado': formatEstado(c.status) },
+    { 'ID': (c.id ?? c._id).toString() }, { 'ID Proyecto': c.projectId.toString() }, { 'ID Cliente': c.clientId.toString() },
+    { 'Fecha Inicio': formatFecha(c.fechaInicio) }, { 'Fecha Fin': formatFecha(c.fechaFin) },
+    { 'Valor Total': formatMoneda(c.valorTotal) }, { 'Condiciones': c.condiciones }, { 'Estado': formatEstado(c.status) },
   );
   console.log(table.toString());
 }
@@ -45,37 +38,40 @@ export async function contractMenu(commandFactory) {
     try {
       switch (action) {
         case 'CREATE': {
-          const parte1 = await inquirer.prompt([
+          const r = await inquirer.prompt([
             { type: 'input', name: 'projectId', message: 'ID del proyecto:',
               validate: async (val) => {
                 const clean = val?.trim();
-                if (!PROJECT_ID_REGEX.test(clean)) return error('El ID del proyecto debe ser un número entero positivo.');
+                if (!PROJECT_ID_REGEX.test(clean)) return 'El ID del proyecto debe ser un número entero positivo.';
                 try {
                   const proyectos = await commandFactory.create('listar-proyectos').execute();
                   const existe = proyectos.some((p) => Number(p.id) === Number(clean));
-                  if (!existe) return error(`No existe ningún proyecto con el ID "${clean}".`);
+                  if (!existe) return `No existe ningún proyecto con el ID "${clean}".`;
                 } catch {}
                 return true;
               } },
             { type: 'input', name: 'clientId', message: 'ID del cliente:',
               validate: async (val) => {
                 const clean = val?.trim();
-                if (!CLIENT_ID_REGEX.test(clean)) return error('El ID del cliente debe ser un número entero positivo.');
+                if (!CLIENT_ID_REGEX.test(clean)) return 'El ID del cliente debe ser un número entero positivo.';
                 try {
                   const clientes = await commandFactory.create('listar-clientes').execute();
                   const existe = clientes.some((c) => Number(c.id) === Number(clean));
-                  if (!existe) return error(`No existe ningún cliente con el ID "${clean}".`);
+                  if (!existe) return `No existe ningún cliente con el ID "${clean}".`;
                 } catch {}
                 return true;
               } },
+            ...preguntasFecha('inicio del contrato', 'inicio'),
+            ...preguntasFecha('fin del contrato', 'fin'),
+            { type: 'input', name: 'valorTotal', message: 'Valor total:', validate: validarMonto },
+            { type: 'input', name: 'condiciones', message: 'Condiciones del contrato:', validate: (val) => (val && val.trim() ? true : 'Las condiciones son obligatorias.') },
           ]);
-          const fechaInicio = await preguntarFecha('inicio del contrato');
-          const fechaFin = await preguntarFecha('fin del contrato');
-          const parte2 = await inquirer.prompt([
-            { type: 'number', name: 'valorTotal', message: 'Valor total:', validate: validarMonto },
-            { type: 'input', name: 'condiciones', message: 'Condiciones del contrato:', validate: (val) => (val && val.trim() ? true : error('Las condiciones son obligatorias.')) },
-          ]);
-          const datos = { ...parte1, fechaInicio, fechaFin, ...parte2 };
+          const datos = {
+            projectId: r.projectId, clientId: r.clientId,
+            fechaInicio: armarFecha(r.inicioDia, r.inicioMes, r.inicioAnio),
+            fechaFin: armarFecha(r.finDia, r.finMes, r.finAnio),
+            valorTotal: Number(r.valorTotal), condiciones: r.condiciones,
+          };
           const comando = commandFactory.create('crear-contrato');
           const creado = await comando.execute(datos);
           console.log(`\n${exito(`Contrato registrado con éxito. ID: ${creado.id}`)}\n`);
@@ -101,7 +97,7 @@ export async function contractMenu(commandFactory) {
           const { id } = await inquirer.prompt([{ type: 'input', name: 'id', message: 'ID del contrato a actualizar:', validate: validateNumericId }]);
           const campos = await inquirer.prompt([
             { type: 'input', name: 'condiciones', message: 'Nuevas condiciones (Enter para no cambiar):' },
-            { type: 'input', name: 'valorTotal', message: 'Nuevo valor total (Enter para no cambiar):', validate: (v) => (!v || (!Number.isNaN(Number(v)) && Number(v) > 0)) || error('El monto ingresado no es válido.') },
+            { type: 'input', name: 'valorTotal', message: 'Nuevo valor total (Enter para no cambiar):', validate: (v) => (!v || (!Number.isNaN(Number(v)) && Number(v) > 0)) || 'El monto ingresado no es válido.' },
           ]);
           const data = {};
           if (campos.condiciones) data.condiciones = campos.condiciones;
@@ -124,6 +120,6 @@ export async function contractMenu(commandFactory) {
         }
         case 'BACK': mainLoop = false; break;
       }
-    } catch (e) { console.error(`\n${error(e.message)}\n`); }
+    } catch (e) { mostrarError(e); }
   }
 }

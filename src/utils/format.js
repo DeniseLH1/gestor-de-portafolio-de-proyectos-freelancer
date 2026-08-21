@@ -4,13 +4,25 @@ import dayjs from 'dayjs';
 const COLORES_ESTADO = {
   activo: chalk.green,
   aprobado: chalk.green,
-  entregado: chalk.green,
+  entregado: chalk.blue,
   finalizado: chalk.green,
   pendiente: chalk.yellow,
   borrador: chalk.yellow,
   inactivo: chalk.gray,
   cancelado: chalk.red,
   rechazado: chalk.red,
+  Planificado: chalk.yellow,
+  'En progreso': chalk.blue,
+  'En espera': chalk.gray,
+  Completado: chalk.green,
+  Cancelado: chalk.red,
+  DRAFT: chalk.gray,
+  SENT: chalk.blue,
+  ACCEPTED: chalk.green,
+  REJECTED: chalk.red,
+  EXPIRED: chalk.gray,
+  INCOME: chalk.green,
+  EXPENSE: chalk.red,
 };
 
 export function formatEstado(estado) {
@@ -32,4 +44,14 @@ export function exito(mensaje) {
 
 export function error(mensaje) {
   return chalk.red.bold(`✖ ${mensaje}`);
+}
+
+export function mostrarError(e) {
+  if (e.errors && e.errors.length > 0) {
+    console.error(`\n${error(e.message)}`);
+    e.errors.forEach((msg) => console.error(`  - ${msg}`));
+    console.log();
+  } else {
+    console.error(`\n${error(e.message)}\n`);
+  }
 }

@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
-import { formatEstado, formatFecha, exito, error } from '../utils/format.js';
+import { formatEstado, formatFecha, exito, error, mostrarError } from '../utils/format.js';
 import { EMAIL_REGEX, TELEFONO_REGEX, DPI_REGEX } from '../models/clients.js';
 
 // Función para validar que la entrada sea un entero positivo
@@ -326,7 +326,7 @@ export async function clientMenu(commandFactory) {
           break;
       }
     } catch (e) {
-      console.error(`\n${error(e.message)}\n`);
+      mostrarError(e);
     }
   }
 }
