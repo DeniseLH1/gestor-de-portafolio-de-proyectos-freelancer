@@ -32,12 +32,19 @@ async create(data) {
       throw new ValidationError('El ID debe ser un número entero positivo.');
     }
 
-    // Busca por el campo autoincrementable 'id'
     const cliente = await this.clientRepository.findOne({ id: numericId });
     if (!cliente) {
       throw new ValidationError(`No se encontró ningún cliente con el ID ${numericId}.`);
     }
     return cliente;
+  }
+
+  async findByName(nombre) {
+    const clientes = await this.clientRepository.findByName(nombre);
+    if (clientes.length === 0) {
+      throw new ValidationError(`No se encontró ningún cliente cuyo nombre contenga "${nombre}".`);
+    }
+    return clientes;
   }
 
   async findAll() {
@@ -50,7 +57,6 @@ async create(data) {
     const client = new Client({ ...cliente, ...data });
     client.assertValid();
 
-    // Actualiza usando el campo 'id' autoincrementable
     return await this.clientRepository.updateByCustomId(cliente.id, client.toObject());
   }
 
