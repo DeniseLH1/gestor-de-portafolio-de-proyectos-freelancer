@@ -1,4 +1,7 @@
 import inquirer from 'inquirer';
+import Table from 'cli-table3';
+import chalk from 'chalk';
+import ora from 'ora';
 import { exito, mostrarError } from '../utils/format.js';
 import { validarMonto } from '../utils/prompts.js';
 
@@ -20,6 +23,7 @@ export async function financialMenu(commandFactory) {
           { name: '1. Registrar Transacción (Ingreso / Egreso)', value: 'CREATE_TX' },
           { name: '2. Consultar Balance General / Filtros', value: 'BALANCE' },
           { name: '3. Gestionar Estado/Eliminación de Entregables (Rollback)', value: 'DELIVERABLE_ACTION' },
+          { name: '4. Resumen Financiero por Cliente (por ID o nombre)', value: 'CLIENT_SUMMARY' },
           { name: 'Volver al Menú Principal', value: 'BACK' },
         ] },
     ]);
@@ -90,6 +94,50 @@ export async function financialMenu(commandFactory) {
           const comando = commandFactory.create('gestionar-entregable-financiero');
           await comando.execute({ deliverableId: Number(deliverableId.trim()), action: deliverableAction, newStatus });
           console.log(`\n${exito('Operación sobre el entregable y rollback financiero ejecutados con éxito.')}\n`);
+          break;
+        }
+        case 'CLIENT_SUMMARY': {
+          const { busqueda } = await inquirer.prompt([
+            { type: 'input', name: 'busqueda', message: 'ID o nombre del cliente:', validate: (v) => (v && v.trim() ? true : 'Este campo es obligatorio.') },
+          ]);
+          const clean = busqueda.trim();
+          let cliente;
+
+          if (NUMERIC_ID_REGEX.test(clean)) {
+            cliente = await commandFactory.create('buscar-cliente').execute(Number(clean));
+          } else {
+            const coincidencias = await commandFactory.create('buscar-cliente-nombre').execute(clean);
+            if (coincidencias.length > 1) {
+              console.log(chalk.yellow('\nSe encontró más de un cliente con ese nombre:'));
+              const tablaCoincidencias = new Table({ head: ['ID', 'Nombre', 'Email'] });
+              coincidencias.forEach((c) => tablaCoincidencias.push([c.id, c.nombre, c.email]));
+              console.log(tablaCoincidencias.toString());
+              console.log(chalk.yellow('\nVuelve a intentar usando el ID exacto de la lista de arriba.\n'));
+              break;
+            }
+            cliente = coincidencias[0];
+          }
+
+          const spinner = ora('Consultando información financiera con agregación de MongoDB...').start();
+          let resumen;
+          try {
+            resumen = await commandFactory.create('resumen-financiero-cliente').execute(cliente.id);
+            spinner.succeed('Resumen generado con éxito.');
+          } catch (e) {
+            spinner.fail('No se pudo generar el resumen.');
+            throw e;
+          }
+
+          console.log('\n--- Resumen Financiero del Cliente ---');
+          const tabla = new Table({ head: ['Campo', 'Valor'] });
+          tabla.push(
+            { 'Cliente': `${cliente.nombre} (ID: ${cliente.id})` },
+            { 'Total Ingresos': chalk.green(`$${resumen.totalIngresos.toFixed(2)}`) },
+            { 'Total Egresos': chalk.red(`$${resumen.totalEgresos.toFixed(2)}`) },
+            { 'Balance Neto': (resumen.balanceNeto >= 0 ? chalk.green : chalk.red)(`$${resumen.balanceNeto.toFixed(2)}`) },
+          );
+          console.log(tabla.toString());
+          console.log();
           break;
         }
         case 'BACK': mainLoop = false; break;
